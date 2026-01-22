@@ -1,0 +1,78 @@
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 140px);
+    /* Adjust based on header/footer height */
+    padding: 2rem;
+    background-color: #f8f9fa;
+    /* Light background */
+}
+
+.login-container {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+.login-container h2 {
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+    /* White text */
+    font-weight: 700;
+}
+
+.social-login-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.social-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.social-btn.naver {
+    background-color: #03C75A;
+    color: white;
+}
+
+.social-btn.naver:hover {
+    background-color: #02b351;
+}
+
+.social-btn.kakao {
+    background-color: #FEE500;
+    color: #3C1E1E;
+}
+
+.social-btn.kakao:hover {
+    background-color: #fdd835;
+}
+
+.social-btn.google {
+    background-color: #FFFFFF;
+    color: #333;
+    /* Dark text for google button */
+    border: 1px solid #ddd;
+}
+
+.social-btn.google:hover {
+    background-color: #f1f1f1;
+}

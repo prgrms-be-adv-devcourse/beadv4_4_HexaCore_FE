@@ -1,73 +1,395 @@
-/* Home Styles */
-.hero {
-    margin-bottom: var(--spacing-xxl);
+/* Global Home Styles */
+.home-page {
+    /* Main background for the whole page - White Mode */
+    background-color: #ffffff;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-.hero-banner {
-    height: 480px;
-    background-color: #e5e5e5;
+/* Hero Section - Keep the Gradient as it is generally compatible */
+.hero {
+    height: 600px;
+    background: linear-gradient(108deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    background-image: linear-gradient(45deg, #f3f3f3 25%, #e0e0e0 25%, #e0e0e0 50%, #f3f3f3 50%, #f3f3f3 75%, #e0e0e0 75%, #e0e0e0 100%);
-    background-size: 20px 20px;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding-top: 60px;
+    /* Offset for header */
+}
+
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Semi-transparent circles overlay effect */
+.hero::before,
+.hero::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 1;
+}
+
+.hero::before {
+    width: 600px;
+    height: 600px;
+    top: -100px;
+    left: -100px;
+}
+
+.hero::after {
+    width: 400px;
+    height: 400px;
+    bottom: -50px;
+    right: 10%;
 }
 
 .hero-content {
-    text-align: center;
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    width: 100%;
+    padding: 0 20px;
 }
 
-.hero-content h2 {
-    font-size: 48px;
-    font-weight: 900;
-    font-style: italic;
-    margin-bottom: var(--spacing-lg);
-    line-height: 1.1;
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.btn-primary {
-    background-color: var(--color-black);
-    color: var(--color-white);
-    padding: var(--spacing-md) var(--spacing-xl);
-    border-radius: 4px;
-    font-weight: 600;
-    transition: background-color 0.2s;
+.hero-subtitle {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 3rem;
+    font-weight: 500;
 }
 
-.btn-primary:hover {
-    background-color: var(--color-gray-900);
-}
-
-.section-container {
-    max-width: var(--container-width);
+/* Search Bar in Hero */
+.hero-search-container {
+    background: #ffffff;
+    /* White search bar */
+    border-radius: 30px;
+    padding: 8px 8px 8px 24px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
     margin: 0 auto;
-    padding: 0 var(--spacing-md);
-    margin-bottom: 60px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.hero-search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #333;
+    /* Dark text */
+    font-size: 1rem;
+    outline: none;
+}
+
+.hero-search-input::placeholder {
+    color: #999;
+}
+
+/* ... search btn ... */
+
+.search-btn {
+    background: #c0392b;
+    /* Match Login button or accent */
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.search-btn:hover {
+    background: #e74c3c;
+}
+
+/* Search Section (Replaces Hero) */
+.search-section {
+    padding: 100px 0 40px 0;
+    /* Space for fixed header + padding */
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Main Layout */
+.main-layout {
+    width: 100%;
+    /* Full width */
+    max-width: 100%;
+    /* Ensure no constraint */
+    margin: 0;
+    /* Remove centering */
+    padding: 2rem 4rem;
+    /* Add side padding for breathing room but keeping it wide */
+    display: flex;
+    gap: 40px;
+}
+
+.search-container-wide {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.wide-search-input {
+    width: 100%;
+    padding: 16px 60px 16px 24px;
+    font-size: 1rem;
+    border: 2px solid #eee;
+    border-radius: 50px;
+    background: #f9f9f9;
+    outline: none;
+    transition: all 0.2s;
+}
+
+/* Sidebar Styles Updates */
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    /* Made wider from 200px */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.sidebar-cat-btn {
+    /* ... existing ... */
+    width: 100%;
+    /* Full width for block feel */
+    padding: 10px 16px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #555;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-cat-btn:hover {
+    background: #f5f5f5;
+    color: #000;
+}
+
+.sidebar-cat-btn.active {
+    background: #000;
+    /* Black for View Category Active */
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Sidebar Brand Button */
+.sidebar-brand-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 4px;
+    /* Slightly rounded */
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #555;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-brand-btn:hover {
+    background: #fff0f0;
+    color: #ff6b6b;
+}
+
+.sidebar-brand-btn.active {
+    background: #ff6b6b;
+    /* Orange for Brand Active */
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+}
+
+/* List spacing */
+.sidebar-list {
+    gap: 4px;
+    /* Tighter gap for menu items */
+}
+
+.wide-search-input:focus {
+    border-color: #333;
+    background: #fff;
+}
+
+.wide-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    /* Orange Search Button */
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Category Navigation Bar */
+.category-nav {
+    background-color: #ffffff;
+    border-bottom: 1px solid #eee;
+    padding: 1rem 0;
+    position: sticky;
+    top: 70px;
+    z-index: 100;
+}
+
+.category-list {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.category-item button {
+    background: #fff;
+    border: 1px solid #eee;
+    color: #888;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-item button.active,
+.category-item button:hover {
+    background: #fff;
+    border-color: #ddd;
+    /* Softer border instead of black */
+    color: #333;
+    /* Dark gray text instead of pure black */
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    /* Soft shadow for lift */
+}
+
+.hero-search-input::placeholder {
+    color: #888;
+}
+
+.search-btn {
+    background: #c0392b;
+    /* Match Login button or accent */
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+color: #000;
+font-weight: 800;
+}
+
+
+/* Product Section Container */
+.section-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem 10%;
+    /* Large side padding for "blank space" */
 }
 
 .section-header {
-    margin-bottom: var(--spacing-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1rem;
 }
 
 .section-header h3 {
-    font-size: 20px;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 4px;
+    color: #fff;
 }
 
-.section-subtitle {
-    color: var(--color-gray-400);
-    font-size: 14px;
+.section-count {
+    font-size: 0.9rem;
+    color: #888;
 }
 
 .product-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--spacing-md);
+    /* 4 items per row for Home */
+    gap: 20px;
+}
+
+/* Shop page grid override */
+.shop-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 1024px) {
+    .product-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
 @media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
     .product-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .nav {
+        display: none;
+        /* Hide nav on mobile for now */
     }
 }
