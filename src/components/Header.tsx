@@ -4,16 +4,19 @@ export const Header = () => {
     return (
         <header className="header">
             <div className="header-container">
-                <div className="logo">RESELLO</div>
+                <div className="logo">
+                    <span className="logo-icon">⚡</span>Resello
+                </div>
                 <nav className="nav">
-                    <a href="/" className="nav-link">HOME</a>
-                    <a href="/shop" className="nav-link">SHOP</a>
+                    <a href="/shop" className="nav-link">쇼핑</a>
+                    <a href="/style" className="nav-link">스타일</a>
+                    <a href="/saved" className="nav-link">관심상품</a>
                 </nav>
                 <div className="user-actions">
-                    <a href="/login" className="login-btn">Login</a>
-                    <span>Search</span>
-                    <span>Cart</span>
-                    <span>Profile</span>
+                    <span className="icon-btn">🛒</span>
+                    <span className="icon-btn">📦</span>
+                    <span className="icon-btn">👤</span>
+                    <a href="/login" className="login-btn">로그인</a>
                 </div>
             </div>
         </header>

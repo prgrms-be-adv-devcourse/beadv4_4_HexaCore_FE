@@ -2,35 +2,58 @@
 .product-card {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-sm);
+    gap: 12px;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    background: transparent;
 }
-
-/* .product-card:hover { 
-    transform: translateY(-4px); 
-} */
 
 .product-image-container {
     width: 100%;
     aspect-ratio: 1 / 1;
-    background-color: var(--color-gray-100);
-    border-radius: 8px;
-    /* Slightly rounded */
-    overflow: hidden;
+    background-color: #f4f4f4;
+    /* Light bg for image placeholder */
+    border-radius: 12px;
     position: relative;
+    overflow: hidden;
 }
 
 .product-image {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    /* RESELLO style often has product floating */
+    /* Contain to show full shoe */
     transition: transform 0.3s ease;
+    mix-blend-mode: multiply;
+    /* Helps blend whitespace if image has white bg */
 }
 
-.product-card:hover .product-image {
+/* Fallback for blend mode if image is transparent png */
+.product-image-container:hover .product-image {
     transform: scale(1.05);
+}
+
+.wishlist-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-card:hover .wishlist-btn {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .product-info {
@@ -39,26 +62,27 @@
 }
 
 .product-brand {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--color-gray-900);
-    margin-bottom: 2px;
+    color: #e0e0e0;
+    /* Light text for dark mode */
+    margin-bottom: 4px;
     text-decoration: underline;
     text-decoration-color: transparent;
-    /* For animation maybe */
 }
 
 .product-name {
     font-size: 13px;
-    color: var(--color-gray-900);
+    color: #b0b0b0;
     line-height: 1.4;
-    margin-bottom: 6px;
-    /* limit to 2 lines */
+    margin-bottom: 8px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    height: 36px;
+    /* Fixed height for alignment */
 }
 
 .product-price {
@@ -68,13 +92,13 @@
 }
 
 .price-amount {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
-    color: var(--color-black);
+    color: #ffffff;
 }
 
 .price-label {
     font-size: 11px;
-    color: var(--color-gray-400);
+    color: #888;
     margin-top: 2px;
 }

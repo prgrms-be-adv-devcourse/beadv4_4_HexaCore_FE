@@ -5,23 +5,28 @@
     min-height: calc(100vh - 140px);
     /* Adjust based on header/footer height */
     padding: 2rem;
-    background-color: #f8f9fa;
+    background-color: #1a1a1a;
+    /* Match Home Page Dark Background */
 }
 
 .login-container {
-    background: white;
+    background: #2a2a2a;
+    /* Slightly lighter dark for card */
     padding: 2.5rem;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    /* Darker shadow */
     width: 100%;
     max-width: 400px;
     text-align: center;
+    border: 1px solid #333;
 }
 
 .login-container h2 {
     margin-bottom: 2rem;
     font-size: 1.8rem;
-    color: #333;
+    color: #ffffff;
+    /* White text */
     font-weight: 700;
 }
 
@@ -66,7 +71,8 @@
 
 .social-btn.google {
     background-color: #FFFFFF;
-    color: #757575;
+    color: #333;
+    /* Dark text for google button */
     border: 1px solid #ddd;
 }
 
