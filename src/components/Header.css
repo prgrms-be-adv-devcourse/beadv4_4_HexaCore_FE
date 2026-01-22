@@ -1,42 +1,62 @@
-/* Header Styles */
+/* Existing styles */
 .header {
-    height: var(--header-height);
-    border-bottom: 1px solid var(--color-gray-200);
-    background-color: var(--color-white);
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
 }
 
 .header-container {
-    max-width: var(--container-width);
+    max-width: 1200px;
     margin: 0 auto;
-    height: 100%;
+    padding: 1rem 2rem;
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 0 var(--spacing-md);
+    align-items: center;
 }
 
 .logo {
-    font-weight: 900;
-    font-size: 24px;
-    font-style: italic;
-    letter-spacing: -1px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
 }
 
 .nav {
     display: flex;
-    gap: var(--spacing-lg);
+    gap: 2rem;
 }
 
 .nav-link {
-    font-size: 16px;
+    text-decoration: none;
+    color: #333;
     font-weight: 500;
+    font-size: 0.95rem;
+    transition: color 0.2s;
+}
+
+.nav-link:hover {
+    color: #666;
 }
 
 .user-actions {
     display: flex;
-    gap: var(--spacing-md);
-    font-size: 14px;
+    gap: 1.5rem;
+    cursor: pointer;
+    align-items: center;
+}
+
+.login-btn {
+    text-decoration: none;
+    color: white;
+    background-color: #000;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+    background-color: #333;
 }

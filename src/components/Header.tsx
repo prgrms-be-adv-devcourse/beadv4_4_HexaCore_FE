@@ -10,6 +10,7 @@ export const Header = () => {
                     <a href="/shop" className="nav-link">SHOP</a>
                 </nav>
                 <div className="user-actions">
+                    <a href="/login" className="login-btn">Login</a>
                     <span>Search</span>
                     <span>Cart</span>
                     <span>Profile</span>
