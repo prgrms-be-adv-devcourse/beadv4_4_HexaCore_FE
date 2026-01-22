@@ -20,27 +20,22 @@
     align-items: center;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: #000;
-    /* Black for opaque white header */
-    letter-spacing: -0.5px;
+.logo-link {
+    text-decoration: none;
 }
 
-.logo-icon {
-    background: #333;
-    /* Placeholder for logo box */
-    color: white;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
+.logo {
+    font-size: 2rem;
+    font-weight: 900;
+    /* Gradient Text Style matching the provided image (Blue to Purple) */
+    background: linear-gradient(90deg, #5c6bc0 0%, #8e24aa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -1px;
+    font-family: 'Inter', sans-serif;
+    /* Ensure clean sans-serif */
 }
 
 .nav {

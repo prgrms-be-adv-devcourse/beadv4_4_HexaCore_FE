@@ -19,82 +19,60 @@ const CATEGORIES = ["전체", "스니커즈", "의류", "액세서리", "컬렉�
 
 export const Home = () => {
     const [activeCategory, setActiveCategory] = useState("전체");
-    const [activeBrand, setActiveBrand] = useState("전체 브랜드");
 
     return (
         <div className="home-page">
-            {/* Search Section (Replaces Hero) */}
-            <div className="search-section">
-                <div className="search-container-wide">
-                    <input
-                        type="text"
-                        className="wide-search-input"
-                        placeholder="브랜드, 상품명으로 검색"
-                    />
-                    <button className="wide-search-btn">
-                        <Search size={20} />
-                    </button>
+            {/* Hero Section */}
+            <section className="hero">
+                <div className="hero-content">
+                    <h1 className="hero-title">
+                        한정판 거래의 새로운 기준
+                    </h1>
+                    <p className="hero-subtitle">
+                        안전하고 투명한 입찰 시스템으로 원하는 가격에 거래하세요
+                    </p>
+
+                    <div className="hero-search-container">
+                        <input
+                            type="text"
+                            className="hero-search-input"
+                            placeholder="브랜드, 상품명으로 검색"
+                        />
+                        <button className="search-btn">
+                            <Search size={20} />
+                        </button>
+                    </div>
                 </div>
+            </section>
+
+            {/* Category Navigation */}
+            <div className="category-nav">
+                <ul className="category-list">
+                    {CATEGORIES.map(cat => (
+                        <li key={cat} className="category-item">
+                            <button
+                                className={activeCategory === cat ? 'active' : ''}
+                                onClick={() => setActiveCategory(cat)}
+                            >
+                                {cat}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
             </div>
 
-            {/* Main Content Layout */}
-            <div className="main-layout">
-                {/* Left Sidebar */}
-                <aside className="sidebar">
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">브랜드</h3>
-                        <ul className="sidebar-list">
-                            <li>
-                                <button
-                                    className={`sidebar-brand-btn ${activeBrand === "전체 브랜드" ? 'active' : ''}`}
-                                    onClick={() => setActiveBrand("전체 브랜드")}
-                                >
-                                    전체 브랜드
-                                </button>
-                            </li>
-                            {["Nike", "Adidas", "Supreme", "New Balance", "Stussy", "Kaws", "The North Face"].map(brand => (
-                                <li key={brand}>
-                                    <button
-                                        className={`sidebar-brand-btn ${activeBrand === brand ? 'active' : ''}`}
-                                        onClick={() => setActiveBrand(brand)}
-                                    >
-                                        {brand}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="sidebar-section">
-                        <h3 className="sidebar-title">카테고리</h3>
-                        <ul className="sidebar-list">
-                            {CATEGORIES.map(cat => (
-                                <li key={cat}>
-                                    <button
-                                        className={`sidebar-cat-btn ${activeCategory === cat ? 'active' : ''}`}
-                                        onClick={() => setActiveCategory(cat)}
-                                    >
-                                        {cat}
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </aside>
-
-                {/* Product Section */}
-                <section className="section-container">
-                    <div className="section-header">
-                        <h3>인기 상품</h3>
-                        <span className="section-count">{DROPPED_PRODUCTS.length}개 상품</span>
-                    </div>
-                    <div className="product-grid">
-                        {DROPPED_PRODUCTS.map(product => (
-                            <ProductCard key={product.id} {...product} />
-                        ))}
-                    </div>
-                </section>
-            </div>
+            {/* Product Section */}
+            <section className="section-container">
+                <div className="section-header">
+                    <h3>인기 상품</h3>
+                    <span className="section-count">{DROPPED_PRODUCTS.length}개 상품</span>
+                </div>
+                <div className="product-grid">
+                    {DROPPED_PRODUCTS.map(product => (
+                        <ProductCard key={product.id} {...product} />
+                    ))}
+                </div>
+            </section>
         </div>
     );
 };

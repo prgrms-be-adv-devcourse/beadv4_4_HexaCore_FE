@@ -12,9 +12,11 @@ export const Header = () => {
     return (
         <header className="header">
             <div className="header-container">
-                <div className="logo">
-                    <span className="logo-icon"><Zap size={20} fill="white" /></span>Resello
-                </div>
+                <a href="/" className="logo-link">
+                    <div className="logo">
+                        Resello
+                    </div>
+                </a>
                 <nav className="nav">
                     <a href="/shop" className="nav-link">쇼핑</a>
                     <a href="/style" className="nav-link">스타일</a>
