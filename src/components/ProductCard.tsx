@@ -1,4 +1,3 @@
-import type { ComponentProps } from 'react'
 import './ProductCard.css';
 import { Heart } from 'lucide-react';
 
