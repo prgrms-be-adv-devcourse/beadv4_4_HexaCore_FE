@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import './Header.css';
-import { ShoppingCart, Package, User, Zap, Bell } from 'lucide-react';
+import { ShoppingCart, Package, User, Bell } from 'lucide-react';
 
 export const Header = () => {
     const [showNotifications, setShowNotifications] = useState(false);
