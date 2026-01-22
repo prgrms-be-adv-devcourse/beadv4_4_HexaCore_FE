@@ -335,10 +335,10 @@ font-weight: 800;
 
 /* Product Section Container */
 .section-container {
-    max-width: 1280px;
+    max-width: 1600px;
     margin: 0 auto;
-    padding: 2rem 2rem 4rem 2rem;
-    /* Reduced top padding */
+    padding: 2rem 10%;
+    /* Large side padding for "blank space" */
 }
 
 .section-header {
@@ -363,9 +363,14 @@ font-weight: 800;
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    /* Forced 3 columns as requested */
+    grid-template-columns: repeat(4, 1fr);
+    /* 4 items per row for Home */
     gap: 20px;
+}
+
+/* Shop page grid override */
+.shop-grid {
+    grid-template-columns: repeat(3, 1fr);
 }
 
 @media (max-width: 1024px) {
