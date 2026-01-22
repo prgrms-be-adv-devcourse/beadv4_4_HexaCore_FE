@@ -131,6 +131,142 @@
     background: #e74c3c;
 }
 
+/* Search Section (Replaces Hero) */
+.search-section {
+    padding: 100px 0 40px 0;
+    /* Space for fixed header + padding */
+    background: #fff;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Main Layout */
+.main-layout {
+    width: 100%;
+    /* Full width */
+    max-width: 100%;
+    /* Ensure no constraint */
+    margin: 0;
+    /* Remove centering */
+    padding: 2rem 4rem;
+    /* Add side padding for breathing room but keeping it wide */
+    display: flex;
+    gap: 40px;
+}
+
+.search-container-wide {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.wide-search-input {
+    width: 100%;
+    padding: 16px 60px 16px 24px;
+    font-size: 1rem;
+    border: 2px solid #eee;
+    border-radius: 50px;
+    background: #f9f9f9;
+    outline: none;
+    transition: all 0.2s;
+}
+
+/* Sidebar Styles Updates */
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    /* Made wider from 200px */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+.sidebar-cat-btn {
+    /* ... existing ... */
+    width: 100%;
+    /* Full width for block feel */
+    padding: 10px 16px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #555;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-cat-btn:hover {
+    background: #f5f5f5;
+    color: #000;
+}
+
+.sidebar-cat-btn.active {
+    background: #000;
+    /* Black for View Category Active */
+    color: #fff;
+    font-weight: 700;
+}
+
+/* Sidebar Brand Button */
+.sidebar-brand-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border-radius: 4px;
+    /* Slightly rounded */
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    color: #555;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sidebar-brand-btn:hover {
+    background: #fff0f0;
+    color: #ff6b6b;
+}
+
+.sidebar-brand-btn.active {
+    background: #ff6b6b;
+    /* Orange for Brand Active */
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+}
+
+/* List spacing */
+.sidebar-list {
+    gap: 4px;
+    /* Tighter gap for menu items */
+}
+
+.wide-search-input:focus {
+    border-color: #333;
+    background: #fff;
+}
+
+.wide-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ff6b6b;
+    /* Orange Search Button */
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
 /* Category Navigation Bar */
 .category-nav {
     background-color: #ffffff;
@@ -227,7 +363,8 @@ font-weight: 800;
 
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    /* Forced 3 columns as requested */
     gap: 20px;
 }
 
