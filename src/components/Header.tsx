@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Header.css';
 import { ShoppingCart, Package, User, Bell } from 'lucide-react';
 
@@ -113,7 +114,9 @@ export const Header = () => {
                     <a href="/saved" className="nav-link">관심상품</a>
                 </nav>
                 <div className="user-actions">
-                    <span className="icon-btn"><ShoppingCart size={20} /></span>
+                    <Link to="/cart" className="icon-btn">
+                        <ShoppingCart size={20} />
+                    </Link>
                     <span className="icon-btn"><Package size={20} /></span>
                     <span className="icon-btn"><User size={20} /></span>
                     <a href="/login" className="login-btn">로그인</a>
