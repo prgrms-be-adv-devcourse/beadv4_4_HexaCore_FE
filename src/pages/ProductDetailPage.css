@@ -111,13 +111,13 @@
 }
 
 .action-btn.buy {
-    background: linear-gradient(135deg, #FF6B6B 0%, #EE5D50 100%);
-    box-shadow: 0 4px 15px rgba(238, 93, 80, 0.3);
+    background: linear-gradient(135deg, #8e24aa 0%, #ab47bc 100%);
+    box-shadow: 0 4px 15px rgba(142, 36, 170, 0.3);
 }
 
 .action-btn.sell {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    background: linear-gradient(135deg, #5c6bc0 0%, #7986cb 100%);
+    box-shadow: 0 4px 15px rgba(92, 107, 192, 0.3);
 }
 
 .action-sub-text {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SHOP_PRODUCTS } from '../data/mockData';
 import { Heart, Truck, CheckCircle } from 'lucide-react';
@@ -6,6 +7,11 @@ import './ProductDetailPage.css';
 export const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const product = SHOP_PRODUCTS.find(p => p.id === id);
+    const [isWishlisted, setIsWishlisted] = useState(false);
+
+    const toggleWishlist = () => {
+        setIsWishlisted(!isWishlisted);
+    };
 
     if (!product) {
         return (
@@ -47,9 +53,9 @@ export const ProductDetailPage = () => {
                     </button>
                 </div>
 
-                <button className="wishlist-btn-large">
-                    <Heart size={20} />
-                    <span>관심상품</span>
+                <button className="wishlist-btn-large" onClick={toggleWishlist}>
+                    <Heart size={20} fill={isWishlisted ? "#333" : "none"} />
+                    <span>{isWishlisted ? "관심상품 추가됨" : "관심상품"}</span>
                 </button>
 
                 <div className="delivery-info">
@@ -58,8 +64,8 @@ export const ProductDetailPage = () => {
                             <Truck size={20} />
                         </div>
                         <div className="delivery-text">
-                            <p className="delivery-title">무료배송</p>
-                            <p className="delivery-desc">모든 상품 무료 배송 (이벤트 기간)</p>
+                            <p className="delivery-title">배송비 3,000원</p>
+                            <p className="delivery-desc">검수 완료 후 배송</p>
                         </div>
                     </div>
                     <div className="delivery-item">
@@ -68,7 +74,7 @@ export const ProductDetailPage = () => {
                         </div>
                         <div className="delivery-text">
                             <p className="delivery-title">정품 보증</p>
-                            <p className="delivery-desc">KREAM 검수센터에서 검수 후 배송</p>
+                            <p className="delivery-desc">RESELLO 검수센터에서 검수 후 배송</p>
                         </div>
                     </div>
                 </div>
