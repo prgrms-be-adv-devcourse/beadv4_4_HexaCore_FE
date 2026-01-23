@@ -9,7 +9,7 @@
 /* Hero Section - Keep the Gradient as it is generally compatible */
 .hero {
     height: 600px;
-    background: linear-gradient(108deg, #ffecd2 0%, #fcb69f 50%, #ff9a9e 100%);
+    background: linear-gradient(108deg, #e8eaf6 0%, #9fa8da 50%, #5c6bc0 100%);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -113,8 +113,8 @@
 /* ... search btn ... */
 
 .search-btn {
-    background: #c0392b;
-    /* Match Login button or accent */
+    background: #5c6bc0;
+    /* Blue tone to match theme */
     color: white;
     border: none;
     width: 40px;
@@ -128,7 +128,7 @@
 }
 
 .search-btn:hover {
-    background: #e74c3c;
+    background: #3949ab;
 }
 
 /* Search Section (Replaces Hero) */
@@ -199,16 +199,16 @@
 }
 
 .sidebar-cat-btn:hover {
-    background: #fff0f0;
-    color: #ff6b6b;
+    background: #e8eaf6;
+    color: #5c6bc0;
 }
 
 .sidebar-cat-btn.active {
-    background: #ff6b6b;
-    /* Orange for Category Active */
+    background: #5c6bc0;
+    /* Blue for Category Active */
     color: #fff;
     font-weight: 700;
-    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 4px 10px rgba(92, 107, 192, 0.3);
 }
 
 /* Sidebar Brand Button */
@@ -227,16 +227,16 @@
 }
 
 .sidebar-brand-btn:hover {
-    background: #fff0f0;
-    color: #ff6b6b;
+    background: #e8eaf6;
+    color: #5c6bc0;
 }
 
 .sidebar-brand-btn.active {
-    background: #ff6b6b;
-    /* Orange for Brand Active */
+    background: #5c6bc0;
+    /* Blue for Brand Active */
     color: #fff;
     font-weight: 700;
-    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+    box-shadow: 0 4px 10px rgba(92, 107, 192, 0.3);
 }
 
 /* List spacing */
@@ -258,8 +258,8 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: #ff6b6b;
-    /* Orange Search Button */
+    background: #5c6bc0;
+    /* Blue Search Button */
     border: none;
     color: white;
     display: flex;
@@ -314,20 +314,7 @@
     color: #888;
 }
 
-.search-btn {
-    background: #c0392b;
-    /* Match Login button or accent */
-    color: white;
-    border: none;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
-}
+
 
 
 
