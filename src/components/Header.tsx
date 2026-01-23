@@ -108,12 +108,12 @@ export const Header = () => {
                         Resello
                     </div>
                 </a>
-                <nav className="nav">
+                <nav className="nav font-pretendard">
                     <a href="/shop" className="nav-link">쇼핑</a>
                     <a href="/style" className="nav-link">스타일</a>
                     <a href="/saved" className="nav-link">관심상품</a>
                 </nav>
-                <div className="user-actions">
+                <div className="user-actions font-pretendard">
                     <Link to="/cart" className="icon-btn">
                         <ShoppingCart size={20} />
                     </Link>

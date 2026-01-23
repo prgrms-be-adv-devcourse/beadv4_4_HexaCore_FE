@@ -19,7 +19,7 @@ export const Footer = () => {
                 </div>
             </div>
             <div className="footer-bottom">
-                <p>© 2024 RESELLO Corp.</p>
+                <p>© 2026 RESELLO Corp.</p>
             </div>
         </footer>
     );
