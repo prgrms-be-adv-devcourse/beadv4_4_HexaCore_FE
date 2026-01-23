@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import './Header.css';
 import { ShoppingCart, Package, User, Bell } from 'lucide-react';
 
@@ -77,10 +77,27 @@ const NotificationDropdown = () => {
 };
 export const Header = () => {
     const [showNotifications, setShowNotifications] = useState(false);
+    const notifContainerRef = useRef<HTMLDivElement>(null);
 
     const toggleNotifications = () => {
         setShowNotifications(!showNotifications);
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notifContainerRef.current && !notifContainerRef.current.contains(event.target as Node)) {
+                setShowNotifications(false);
+            }
+        };
+
+        if (showNotifications) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showNotifications]);
 
     return (
         <header className="header">
@@ -102,7 +119,7 @@ export const Header = () => {
                     <a href="/login" className="login-btn">로그인</a>
 
                     {/* Notification Section */}
-                    <div className="notification-container">
+                    <div className="notification-container" ref={notifContainerRef}>
                         <span className="icon-btn" onClick={toggleNotifications}>
                             <Bell size={20} />
                             <span className="notif-badge">N</span>
