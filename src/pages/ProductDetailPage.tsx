@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useWishlistStore } from '../store/useWishlistStore';
 import { useParams, Link } from 'react-router-dom';
 import { SHOP_PRODUCTS } from '../data/mockData';
 import { Heart, Truck, CheckCircle } from 'lucide-react';
@@ -7,10 +7,11 @@ import './ProductDetailPage.css';
 export const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const product = SHOP_PRODUCTS.find(p => p.id === id);
-    const [isWishlisted, setIsWishlisted] = useState(false);
+    const { toggleWishlist, wishlistIds } = useWishlistStore();
+    const isWishlisted = id ? wishlistIds.includes(id) : false;
 
-    const toggleWishlist = () => {
-        setIsWishlisted(!isWishlisted);
+    const handleToggleWishlist = () => {
+        if (id) toggleWishlist(id);
     };
 
     if (!product) {
@@ -53,7 +54,7 @@ export const ProductDetailPage = () => {
                     </button>
                 </div>
 
-                <button className="wishlist-btn-large" onClick={toggleWishlist}>
+                <button className="wishlist-btn-large" onClick={handleToggleWishlist}>
                     <Heart size={20} fill={isWishlisted ? "#333" : "none"} />
                     <span>{isWishlisted ? "관심상품 추가됨" : "관심상품"}</span>
                 </button>

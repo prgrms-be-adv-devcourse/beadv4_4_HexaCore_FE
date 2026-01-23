@@ -1,4 +1,4 @@
-import './ProductCard.css';
+import { useWishlistStore } from '../store/useWishlistStore';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -12,28 +12,52 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ id, brand, name, price, imageUrl, tags }: ProductCardProps) => {
+    const { toggleWishlist, wishlistIds } = useWishlistStore();
+    const isLiked = wishlistIds.includes(id);
+
+    const handleToggleLike = (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent Link navigation
+        e.stopPropagation(); // Prevent bubbling
+        toggleWishlist(id);
+    };
+
     return (
-        <Link to={`/products/${id}`} className="product-card-link">
-            <div className="product-card">
-                <div className="product-image-container">
-                    <img src={imageUrl} alt={name} className="product-image" />
-                    <button className="wishlist-btn" onClick={(e) => e.preventDefault()}>
-                        <Heart size={18} color="#333" />
+        <Link to={`/products/${id}`} className="block w-[250px] no-underline text-inherit mx-auto group">
+            <div className="flex flex-col gap-3 cursor-pointer bg-transparent">
+                <div className="relative w-full aspect-square bg-[#f6f6f6] rounded-xl overflow-hidden font-pretendard">
+                    <img
+                        src={imageUrl}
+                        alt={name}
+                        className="w-full h-full object-contain transition-transform duration-300 ease-in-out mix-blend-multiply group-hover:scale-105"
+                    />
+                    <button
+                        className={`absolute top-2.5 right-2.5 bg-white border-none w-8 h-8 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-all duration-200 ease-in-out z-10
+                            ${isLiked ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2.5 group-hover:opacity-100 group-hover:translate-y-0'}`}
+                        onClick={handleToggleLike}
+                    >
+                        <Heart
+                            size={18}
+                            color={isLiked ? "#ef6253" : "#333"}
+                            fill={isLiked ? "#ef6253" : "none"}
+                            className="transition-colors duration-200"
+                        />
                     </button>
                 </div>
-                <div className="product-info">
-                    <h4 className="product-brand">{brand}</h4>
-                    <p className="product-name">{name}</p>
+                <div className="flex flex-col">
+                    <h4 className="text-[16.3px] font-bold text-[#333] mb-1 underline decoration-transparent font-pretendard">{brand}</h4>
+                    <p className="text-[17px] text-[#333] leading-[1.4] mb-2 whitespace-nowrap overflow-hidden text-ellipsis block h-auto font-pretendard">{name}</p>
                     {tags && tags.length > 0 && (
-                        <div className="product-tags">
+                        <div className="flex flex-wrap gap-1.5 mb-2 font-pretendard">
                             {tags.map(tag => (
-                                <span key={tag} className="product-tag">{tag}</span>
+                                <span key={tag} className="text-[11px] px-2 py-0.5 bg-[#f4f4f4] text-[#888] rounded-sm uppercase tracking-wider font-semibold">
+                                    {tag}
+                                </span>
                             ))}
                         </div>
                     )}
-                    <div className="product-price">
-                        <span className="price-label">즉시 구매가</span>
-                        <span className="price-amount">{price.toLocaleString()}원</span>
+                    <div className="mt-auto flex flex-row items-center gap-2.5 font-pretendard">
+                        <span className="text-[16.5px] color-[#888]">즉시 구매가</span>
+                        <span className="text-[16.5px] font-bold text-[#333]">{price.toLocaleString()}원</span>
                     </div>
                 </div>
             </div>
