@@ -147,9 +147,9 @@ export const Header = () => {
                             <NotificationDropdown />
                         )}
 
-                        <span className="flex items-center justify-center w-9 h-9 text-[#333] opacity-90 bg-transparent border border-solid border-[#d1d5db] rounded-lg transition-all hover:bg-black/5 hover:border-gray-400 cursor-pointer">
+                        <Link to="/mypage?tab=delivery" className="flex items-center justify-center w-9 h-9 text-[#333] opacity-90 bg-transparent border border-solid border-[#d1d5db] rounded-lg transition-all hover:bg-black/5 hover:border-gray-400 cursor-pointer">
                             <Package size={20} />
-                        </span>
+                        </Link>
 
                         <Link to="/mypage" className="flex items-center justify-center w-9 h-9 text-[#333] opacity-90 bg-transparent border border-solid border-[#d1d5db] rounded-lg transition-all hover:bg-black/5 hover:border-gray-400">
                             <User size={20} />

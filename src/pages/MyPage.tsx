@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import './MyPage.css';
-import { User, ShoppingBag, CreditCard, Grid } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck } from 'lucide-react';
 
 /* Mock Data for Transactions */
 const TRANSACTIONS = [
@@ -16,7 +16,7 @@ const BUYING_HISTORY = [
         size: '270',
         date: '2024-03-15',
         price: 450000,
-        status: '배송완료'
+        status: '배송 완료'
     },
     {
         id: 2,
@@ -36,7 +36,7 @@ const SELLING_HISTORY = [
         size: '265',
         date: '2024-03-12',
         price: 380000,
-        status: '판매완료'
+        status: '판매 완료'
     },
     {
         id: 2,
@@ -44,169 +44,309 @@ const SELLING_HISTORY = [
         size: '275',
         date: '2024-03-16',
         price: 1200000,
-        status: '검수중'
+        status: '검수 중'
+    },
+];
+
+/* Mock Data for Delivery History */
+const DELIVERY_HISTORY = [
+    {
+        id: 1,
+        name: 'Nike Air Jordan 1 Chicago',
+        date: '2024-03-15',
+        trackingNumber: 'CJ1234567890',
+        courier: 'CJ대한통운',
+        status: '배송 완료'
+    },
+    {
+        id: 2,
+        name: 'Supreme Box Logo Hoodie',
+        date: '2024-03-10',
+        trackingNumber: 'POST0987654321',
+        courier: '우체국택배',
+        status: '배송 중'
     },
 ];
 
 export const MyPage = () => {
-    const [activeTab, setActiveTab] = useState('profile');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(tabParam || 'profile');
+
+    useEffect(() => {
+        if (tabParam) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        setSearchParams({ tab });
+    };
 
     return (
-        <div className="mypage">
-            <h2 className="mypage-title">마이페이지</h2>
-
-            <div className="mypage-content">
-                {/* Left Sidebar */}
-                <div className="mypage-sidebar">
-                    <div className="user-profile-card">
-                        <div className="profile-image">
-                            <img src="https://placehold.co/100x100/png?text=User" alt="Profile" />
-                        </div>
-                        <div className="profile-name">김철수</div>
-                        <div className="profile-email">user@example.com</div>
-
-                        <div className="deposit-section">
-                            <div className="deposit-label">예치금</div>
-                            <div className="deposit-amount">1,500,000원</div>
-                            <button className="charge-btn" onClick={() => setActiveTab('deposit')}>충전하기</button>
-                        </div>
-                    </div>
-
-                    <nav className="mypage-nav">
-                        <button
-                            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('profile')}
-                        >
-                            <User size={20} />
-                            <span>프로필</span>
-                        </button>
-                        <button
-                            className={`nav-item ${activeTab === 'buying' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('buying')}
-                        >
-                            <ShoppingBag size={20} />
-                            <span>구매내역</span>
-                        </button>
-                        <button
-                            className={`nav-item ${activeTab === 'selling' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('selling')}
-                        >
-                            <Grid size={20} />
-                            <span>판매내역</span>
-                        </button>
-                        <button
-                            className={`nav-item ${activeTab === 'deposit' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('deposit')}
-                        >
-                            <CreditCard size={20} />
-                            <span>예치금</span>
-                        </button>
-                    </nav>
+        <div className="min-h-screen bg-[#FAFAFA] pt-[120px] pb-24 px-6 lg:px-10 font-pretendard">
+            <div className="max-w-[1200px] mx-auto">
+                <div className="flex items-center gap-3 mb-10">
+                    <User className="text-[#333]" size={28} />
+                    <h2 className="text-3xl font-black text-[#333] tracking-tight">마이페이지</h2>
                 </div>
 
-                {/* Right Content Area */}
-                <div className="mypage-main">
-                    {activeTab === 'profile' && (
-                        <div className="content-card">
-                            <h3 className="section-title">프로필 편집</h3>
+                <div className="flex flex-col lg:flex-row gap-8 items-start">
+                    {/* Left Sidebar */}
+                    <aside className="w-full lg:w-[280px] space-y-6 flex-shrink-0">
+                        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-20 h-20 rounded-full bg-gray-50 border border-gray-100 p-1 mb-4">
+                                    <img
+                                        src="https://placehold.co/100x100/png?text=User"
+                                        alt="Profile"
+                                        className="w-full h-full rounded-full object-cover"
+                                    />
+                                </div>
+                                <h3 className="text-lg font-bold text-[#333]">김철수</h3>
+                                <p className="text-sm text-gray-400 mb-6">user@example.com</p>
 
-                            <div className="form-group">
-                                <label>이름</label>
-                                <input type="text" defaultValue="김철수" />
+                                <div className="w-full pt-6 border-t border-gray-100">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <span className="text-xs font-bold text-gray-400">결제 예치금</span>
+                                        <span className="text-xs font-bold text-accent hover:underline cursor-pointer">상세내역</span>
+                                    </div>
+                                    <div className="text-xl font-black text-[#333] mb-4 mt-3">1,500,000원</div>
+                                    <button
+                                        className="w-full bg-[#f8f9fa] text-[#333] py-2.5 rounded-xl font-bold text-sm transition-colors hover:bg-gray-100"
+                                        onClick={() => handleTabChange('deposit')}
+                                    >
+                                        충전하기
+                                    </button>
+                                </div>
                             </div>
-
-                            <div className="form-group">
-                                <label>이메일</label>
-                                <input type="email" defaultValue="user@example.com" disabled />
-                            </div>
-
-                            <div className="form-group">
-                                <label>전화번호</label>
-                                <input type="tel" defaultValue="010-1234-5678" />
-                            </div>
-
-                            <button className="save-btn">저장하기</button>
                         </div>
-                    )}
 
-                    {activeTab === 'deposit' && (
-                        <div className="content-card">
-                            <h3 className="section-title">예치금 관리</h3>
+                        <nav className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                            <button
+                                className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'profile' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}
+                                onClick={() => handleTabChange('profile')}
+                            >
+                                <User size={18} />
+                                <span>프로필 정보</span>
+                            </button>
+                            <button
+                                className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'buying' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}
+                                onClick={() => handleTabChange('buying')}
+                            >
+                                <ShoppingBag size={18} />
+                                <span>구매 내역</span>
+                            </button>
+                            <button
+                                className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'selling' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}
+                                onClick={() => handleTabChange('selling')}
+                            >
+                                <Grid size={18} />
+                                <span>판매 내역</span>
+                            </button>
+                            <button
+                                className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'delivery' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}
+                                onClick={() => handleTabChange('delivery')}
+                            >
+                                <Truck size={18} />
+                                <span>배송 내역</span>
+                            </button>
+                            <button
+                                className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'deposit' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}
+                                onClick={() => handleTabChange('deposit')}
+                            >
+                                <CreditCard size={18} />
+                                <span>예치금 관리</span>
+                            </button>
+                            <div className="h-px bg-gray-50 mx-4"></div>
+                            <button className="w-full flex items-center gap-3 px-6 py-4 text-sm font-bold text-gray-400 hover:bg-gray-50 transition-all">
+                                <Settings size={18} />
+                                <span>설정</span>
+                            </button>
+                            <button className="w-full flex items-center gap-3 px-6 py-4 text-sm font-bold text-red-400 hover:bg-red-50 transition-all">
+                                <LogOut size={18} />
+                                <span>로그아웃</span>
+                            </button>
+                        </nav>
+                    </aside>
 
-                            <div className="current-balance-box">
-                                <div className="balance-label">현재 예치금</div>
-                                <div className="balance-value">1,500,000원</div>
-                            </div>
+                    {/* Right Content Area */}
+                    <main className="flex-1 w-full space-y-6">
+                        {activeTab === 'profile' && (
+                            <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                                <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">프로필 정보</h3>
 
-                            <div className="balance-actions">
-                                <button className="action-btn charge">충전하기</button>
-                                <button className="action-btn withdraw">출금하기</button>
-                            </div>
+                                <div className="space-y-6 max-w-[480px] mx-auto py-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-400">이메일 주소</label>
+                                        <input
+                                            type="email"
+                                            defaultValue="user@example.com"
+                                            disabled
+                                            className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-gray-400 cursor-not-allowed font-medium"
+                                        />
+                                    </div>
 
-                            <h4 className="subsection-title">최근 거래 내역</h4>
-                            <div className="transaction-list">
-                                {TRANSACTIONS.map(tx => (
-                                    <div key={tx.id} className="transaction-item">
-                                        <div className="tx-info">
-                                            <div className="tx-type">{tx.type}</div>
-                                            <div className="tx-date">{tx.date}</div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-400">닉네임</label>
+                                        <input
+                                            type="text"
+                                            defaultValue="철수짱"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-400">이름</label>
+                                        <input
+                                            type="text"
+                                            defaultValue="김철수"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-400">전화번호</label>
+                                        <input
+                                            type="tel"
+                                            defaultValue="010-1234-5678"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-400">기본 배송지</label>
+                                        <input
+                                            type="text"
+                                            defaultValue="서울특별시 강남구 테헤란로 123"
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                        />
+                                    </div>
+
+                                    <button className="w-full bg-accent text-white py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5 mt-4">
+                                        수정 사항 저장
+                                    </button>
+                                </div>
+                            </section>
+                        )}
+
+                        {activeTab === 'deposit' && (
+                            <section className="space-y-6">
+                                <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                                    <h3 className="text-xl font-bold text-[#333] mb-8">예치금 현황</h3>
+
+                                    <div className="bg-[#F8F9FA] rounded-2xl p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+                                        <div>
+                                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Balance</div>
+                                            <div className="text-4xl font-black text-accent tracking-tighter">1,500,000<span className="text-xl ml-1 font-bold text-gray-300">원</span></div>
                                         </div>
-                                        <div className={`tx-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
-                                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}원
+                                        <div className="flex gap-3 w-full md:w-auto">
+                                            <button className="flex-1 md:flex-none bg-accent text-white px-8 py-3 rounded-xl font-bold text-sm shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5">충전</button>
+                                            <button className="flex-1 md:flex-none bg-white text-gray-700 border-2 border-gray-400 px-8 py-3 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-gray-50 hover:border-gray-600 hover:text-[#333]">출금</button>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
-                    {activeTab === 'buying' && (
-                        <div className="content-card">
-                            <h3 className="section-title">구매 내역</h3>
-                            <div className="buying-list">
-                                {BUYING_HISTORY.map(item => (
-                                    <div key={item.id} className="buying-item">
-                                        <div className="buying-info">
-                                            <div className="buying-name">{item.name}</div>
-                                            <div className="buying-details">
-                                                사이즈: {item.size} | {item.date}
+                                    <h4 className="text-lg font-bold text-[#333] mb-6">최근 거래 내역</h4>
+                                    <div className="divide-y divide-gray-100 border border-gray-100 rounded-2xl overflow-hidden">
+                                        {TRANSACTIONS.map(tx => (
+                                            <div key={tx.id} className="p-5 flex justify-between items-center bg-white transition-colors hover:bg-gray-50">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.amount > 0 ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
+                                                        {tx.type === '충전' ? <ChevronRight size={18} className="rotate-270" /> : <ChevronRight size={18} className="rotate-90" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-[#333]">{tx.type}</div>
+                                                        <div className="text-xs font-medium text-gray-400">{tx.date}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className={`font-black ${tx.amount > 0 ? 'text-green-500' : 'text-[#333]'}`}>
+                                                        {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}원
+                                                    </div>
+                                                    <div className="text-xs font-medium text-gray-400">잔액 {tx.balance.toLocaleString()}원</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="buying-right">
-                                            <div className="buying-price">{item.price.toLocaleString()}원</div>
-                                            <div className={`buying-status ${item.status === '배송완료' ? 'completed' : 'pending'}`}>
-                                                {item.status}
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                                </div>
+                            </section>
+                        )}
 
-                    {activeTab === 'selling' && (
-                        <div className="content-card">
-                            <h3 className="section-title">판매 내역</h3>
-                            <div className="buying-list">
-                                {SELLING_HISTORY.map(item => (
-                                    <div key={item.id} className="buying-item">
-                                        <div className="buying-info">
-                                            <div className="buying-name">{item.name}</div>
-                                            <div className="buying-details">
-                                                사이즈: {item.size} | {item.date}
+                        {(activeTab === 'buying' || activeTab === 'selling') && (
+                            <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)] text-[#333]">
+                                <h3 className="text-xl font-bold mb-8 pb-4 border-b border-gray-100">
+                                    {activeTab === 'buying' ? '구매 내역' : '판매 내역'}
+                                </h3>
+                                <div className="space-y-4">
+                                    {(activeTab === 'buying' ? BUYING_HISTORY : SELLING_HISTORY).map(item => (
+                                        <div key={item.id} className="p-6 flex justify-between items-center border border-gray-100 rounded-2xl transition-all hover:bg-gray-50 cursor-pointer group">
+                                            <div className="flex gap-4 items-center">
+                                                <div className="w-16 h-16 bg-gray-50 rounded-xl flex-shrink-0 border border-gray-100 p-2 overflow-hidden">
+                                                    <img
+                                                        src={`https://placehold.co/100x100/png?text=${item.name.split(' ')[0]}`}
+                                                        alt={item.name}
+                                                        className="w-full h-full object-contain mix-blend-multiply"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold group-hover:text-accent transition-colors">{item.name}</div>
+                                                    <div className="text-sm font-medium text-gray-400 flex items-center gap-2 mt-1">
+                                                        <span>사이즈: {item.size}</span>
+                                                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                        <span>{item.date}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right flex flex-col items-end gap-2">
+                                                <div className="font-black text-lg">{item.price.toLocaleString()}원</div>
+                                                <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${['배송 완료', '판매 완료'].includes(item.status)
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : ['결제 완료', '검수 중'].includes(item.status)
+                                                        ? 'bg-accent/10 text-accent'
+                                                        : 'bg-gray-100 text-gray-500'
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
                                             </div>
                                         </div>
-                                        <div className="buying-right">
-                                            <div className="buying-price">{item.price.toLocaleString()}원</div>
-                                            <div className={`buying-status ${item.status === '판매완료' ? 'completed' : 'pending'}`}>
-                                                {item.status}
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
+                        {activeTab === 'delivery' && (
+                            <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                                <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100 uppercase">배송 내역</h3>
+                                <div className="space-y-4">
+                                    {DELIVERY_HISTORY.map(item => (
+                                        <div key={item.id} className="p-6 border border-gray-100 rounded-2xl transition-all hover:bg-gray-50">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <div className="text-sm font-bold text-gray-400 mb-1">{item.date}</div>
+                                                    <div className="text-lg font-bold text-[#333]">{item.name}</div>
+                                                </div>
+                                                <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${item.status === '배송 완료'
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : 'bg-blue-100 text-blue-600'
+                                                    }`}>
+                                                    {item.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                                                <div className="text-sm font-medium text-gray-500">
+                                                    <span className="mr-2">{item.courier}</span>
+                                                    <span className="text-gray-300 mr-2">|</span>
+                                                    <span>{item.trackingNumber}</span>
+                                                </div>
+                                                <button className="text-xs font-bold text-accent hover:underline">배송 조회</button>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </main>
                 </div>
             </div>
         </div>
