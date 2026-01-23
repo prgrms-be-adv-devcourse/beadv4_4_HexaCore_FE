@@ -118,7 +118,9 @@ export const Header = () => {
                         <ShoppingCart size={20} />
                     </Link>
                     <span className="icon-btn"><Package size={20} /></span>
-                    <span className="icon-btn"><User size={20} /></span>
+                    <Link to="/mypage" className="icon-btn">
+                        <User size={20} />
+                    </Link>
                     <a href="/login" className="login-btn">로그인</a>
 
                     {/* Notification Section */}
