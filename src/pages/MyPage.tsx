@@ -8,6 +8,26 @@ const TRANSACTIONS = [
     { id: 2, type: '구매', date: '2024-03-14', amount: -450000, balance: 1450000 },
 ];
 
+/* Mock Data for Buying History */
+const BUYING_HISTORY = [
+    {
+        id: 1,
+        name: 'Nike Air Jordan 1 Chicago',
+        size: '270',
+        date: '2024-03-15',
+        price: 450000,
+        status: '배송완료'
+    },
+    {
+        id: 2,
+        name: 'Supreme Box Logo Hoodie',
+        size: 'L',
+        date: '2024-03-10',
+        price: 850000,
+        status: '결제 완료'
+    },
+];
+
 export const MyPage = () => {
     const [activeTab, setActiveTab] = useState('profile');
 
@@ -113,6 +133,30 @@ export const MyPage = () => {
                                         </div>
                                         <div className={`tx-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
                                             {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString()}원
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'buying' && (
+                        <div className="content-card">
+                            <h3 className="section-title">구매 내역</h3>
+                            <div className="buying-list">
+                                {BUYING_HISTORY.map(item => (
+                                    <div key={item.id} className="buying-item">
+                                        <div className="buying-info">
+                                            <div className="buying-name">{item.name}</div>
+                                            <div className="buying-details">
+                                                사이즈: {item.size} | {item.date}
+                                            </div>
+                                        </div>
+                                        <div className="buying-right">
+                                            <div className="buying-price">{item.price.toLocaleString()}원</div>
+                                            <div className={`buying-status ${item.status === '배송완료' ? 'completed' : 'pending'}`}>
+                                                {item.status}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
