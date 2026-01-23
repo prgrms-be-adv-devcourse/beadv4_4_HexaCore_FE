@@ -1,10 +1,30 @@
-import { Mail } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, ArrowLeft } from 'lucide-react';
 import { Logo } from '../components/Logo';
+import { useNavigate } from 'react-router-dom';
+import { emailLogin } from '../api/auth';
 
 export const Login = () => {
-    const handleLogin = (provider: string) => {
-        console.log(`Login with ${provider}`);
-        // Login logic will be implemented here
+    const [showEmailLogin, setShowEmailLogin] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+
+    const handleSocialLogin = (provider: string) => {
+        // 백엔드 OAuth2 Authorization Endpoint로 리다이렉트
+        const backendUrl = `http://localhost:8080/oauth2/authorization/${provider.toLowerCase()}`;
+        window.location.href = backendUrl;
+    };
+
+    const handleEmailLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await emailLogin(email, password);
+            navigate('/');
+        } catch (error) {
+            console.error(error);
+            alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+        }
     };
 
     return (
@@ -22,65 +42,112 @@ export const Login = () => {
                     <p className="text-sm font-medium text-gray-400">당신의 취향을 정하는 새로운 기준</p>
                 </div>
 
-                {/* Social Login Section */}
-                <div className="flex flex-col gap-3">
-                    <button
-                        className="group relative flex h-14 w-full items-center justify-center rounded-xl bg-[#03C75A] text-[15px] font-bold text-white transition-all hover:bg-[#02b351] hover:shadow-md active:scale-[0.98] shadow-sm"
-                        onClick={() => handleLogin('Naver')}
-                    >
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="absolute left-6 h-5 w-5">
-                            <path d="M16.273 12.845L7.376 0H0v24h7.726V11.155L16.624 24H24V0h-7.727v12.845z" />
-                        </svg>
-                        네이버로 로그인
-                    </button>
+                {!showEmailLogin ? (
+                    <>
+                        {/* Social Login Section */}
+                        <div className="flex flex-col gap-3">
+                            <button
+                                className="group relative flex h-14 w-full items-center justify-center rounded-xl bg-[#03C75A] text-[15px] font-bold text-white transition-all hover:bg-[#02b351] hover:shadow-md active:scale-[0.98] shadow-sm"
+                                onClick={() => handleSocialLogin('Naver')}
+                            >
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="absolute left-6 h-5 w-5">
+                                    <path d="M16.273 12.845L7.376 0H0v24h7.726V11.155L16.624 24H24V0h-7.727v12.845z" />
+                                </svg>
+                                네이버로 로그인
+                            </button>
 
-                    <button
-                        className="group relative flex h-14 w-full items-center justify-center rounded-xl bg-[#FEE500] text-[15px] font-bold text-[#3C1E1E] transition-all hover:bg-[#fdd835] hover:shadow-md active:scale-[0.98] shadow-sm"
-                        onClick={() => handleLogin('Kakao')}
-                    >
-                        <svg viewBox="0 0 24 24" fill="currentColor" className="absolute left-6 h-5 w-5">
-                            <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.34 6.054l-.84 3.08c-.05.18.06.37.24.43.05.02.1.02.15.02.13 0 .25-.07.32-.19l3.507-2.335c.42.04.85.06 1.283.06 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
-                        </svg>
-                        카카오로 로그인
-                    </button>
+                            <button
+                                className="group relative flex h-14 w-full items-center justify-center rounded-xl bg-[#FEE500] text-[15px] font-bold text-[#3C1E1E] transition-all hover:bg-[#fdd835] hover:shadow-md active:scale-[0.98] shadow-sm"
+                                onClick={() => handleSocialLogin('Kakao')}
+                            >
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="absolute left-6 h-5 w-5">
+                                    <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.34 6.054l-.84 3.08c-.05.18.06.37.24.43.05.02.1.02.15.02.13 0 .25-.07.32-.19l3.507-2.335c.42.04.85.06 1.283.06 4.97 0 9-3.185 9-7.115S16.97 3 12 3z" />
+                                </svg>
+                                카카오로 로그인
+                            </button>
 
-                    <button
-                        className="group relative flex h-14 w-full items-center justify-center rounded-xl border border-gray-400 bg-white text-[15px] font-bold text-[#333] transition-all hover:bg-gray-50 hover:shadow-md active:scale-[0.98] shadow-sm"
-                        onClick={() => handleLogin('Google')}
-                    >
-                        <img
-                            src="https://www.gstatic.com/images/branding/googleg/1x/googleg_standard_color_128dp.png"
-                            alt="Google"
-                            className="absolute left-6 h-5 w-5"
-                        />
-                        Google로 로그인
-                    </button>
-                </div>
+                            <button
+                                className="group relative flex h-14 w-full items-center justify-center rounded-xl border border-gray-400 bg-white text-[15px] font-bold text-[#333] transition-all hover:bg-gray-50 hover:shadow-md active:scale-[0.98] shadow-sm"
+                                onClick={() => handleSocialLogin('Google')}
+                            >
+                                <img
+                                    src="https://www.gstatic.com/images/branding/googleg/1x/googleg_standard_color_128dp.png"
+                                    alt="Google"
+                                    className="absolute left-6 h-5 w-5"
+                                />
+                                Google로 로그인
+                            </button>
+                        </div>
 
-                {/* Footer Links */}
-                <div className="mt-10 flex flex-col items-center gap-6">
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <span className="h-[1px] w-8 bg-gray-100" />
-                        또는 이메일로 로그인
-                        <span className="h-[1px] w-8 bg-gray-100" />
-                    </div>
+                        {/* Footer Links */}
+                        <div className="mt-10 flex flex-col items-center gap-6">
+                            <div className="flex items-center gap-2 text-sm text-gray-400">
+                                <span className="h-[1px] w-8 bg-gray-100" />
+                                또는 이메일로 로그인
+                                <span className="h-[1px] w-8 bg-gray-100" />
+                            </div>
 
-                    <button
-                        className="flex items-center gap-2 text-[14px] font-semibold text-[#5c6bc0] hover:underline"
-                        onClick={() => handleLogin('Email')}
-                    >
-                        <Mail size={16} />
-                        이메일 주소 사용하기
-                    </button>
+                            <button
+                                className="flex items-center gap-2 text-[14px] font-semibold text-[#5c6bc0] hover:underline"
+                                onClick={() => setShowEmailLogin(true)}
+                            >
+                                <Mail size={16} />
+                                이메일 주소 사용하기
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    /* Email Login Form */
+                    <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">이메일 주소</label>
+                            <input
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none"
+                                placeholder="example@email.com"
+                            />
+                        </div>
+                        <div>
+                            <label className="mb-1 block text-sm font-medium text-gray-700">비밀번호</label>
+                            <input
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-black focus:outline-none"
+                                placeholder="비밀번호를 입력해주세요"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="mt-2 h-14 w-full rounded-xl bg-black text-[15px] font-bold text-white transition-all hover:bg-gray-800 hover:shadow-md active:scale-[0.98]"
+                        >
+                            로그인
+                        </button>
 
-                    <div className="flex gap-4 text-xs text-gray-400">
+                        <button
+                            type="button"
+                            className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-black"
+                            onClick={() => setShowEmailLogin(false)}
+                        >
+                            <ArrowLeft size={16} />
+                            다른 방법으로 로그인
+                        </button>
+                    </form>
+                )}
+
+                {!showEmailLogin && (
+                    <div className="mt-8 flex justify-center gap-4 text-xs text-gray-400">
                         <button className="hover:text-gray-600 transition-colors">이메일 가입</button>
                         <span className="h-3 w-[1px] bg-gray-200" />
                         <button className="hover:text-gray-600 transition-colors">이메일 찾기</button>
                         <span className="h-3 w-[1px] bg-gray-200" />
                         <button className="hover:text-gray-600 transition-colors">비밀번호 찾기</button>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

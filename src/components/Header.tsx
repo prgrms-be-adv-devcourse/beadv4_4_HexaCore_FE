@@ -2,6 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Package, User, Bell, Menu, X } from 'lucide-react';
 import { Logo } from './Logo';
+import { useAuthStore } from '../store/authStore';
+import { logout } from '../api/auth';
 
 const INITIAL_NOTIFICATIONS = [
     { id: 1, text: "관심 상품 <strong>조던 1 시카고</strong>의 가격이 하락했습니다.", time: "방금 전", unread: false },
@@ -82,6 +84,12 @@ export const Header = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const notifContainerRef = useRef<HTMLDivElement>(null);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
+    const { isAuthenticated } = useAuthStore();
+
+    const handleLogout = async () => {
+        await logout();
+        window.location.href = '/';
+    };
 
     const toggleNotifications = () => {
         setShowNotifications(!showNotifications);
@@ -159,7 +167,16 @@ export const Header = () => {
                             <ShoppingCart size={20} />
                         </Link>
 
-                        <a href="/login" className="no-underline text-white bg-accent px-[18px] py-2 rounded-md text-[0.9rem] font-semibold transition-colors hover:bg-[#3949ab]">로그인</a>
+                        {isAuthenticated ? (
+                            <button
+                                onClick={handleLogout}
+                                className="no-underline text-[#333] bg-transparent border border-gray-300 px-[18px] py-2 rounded-md text-[0.9rem] font-semibold transition-colors hover:bg-gray-100 cursor-pointer"
+                            >
+                                로그아웃
+                            </button>
+                        ) : (
+                            <a href="/login" className="no-underline text-white bg-accent px-[18px] py-2 rounded-md text-[0.9rem] font-semibold transition-colors hover:bg-[#3949ab]">로그인</a>
+                        )}
                     </div>
 
                     <button className="md:hidden flex items-center justify-center p-2 text-[#333] bg-transparent border-none cursor-pointer" onClick={toggleMobileMenu}>
@@ -190,7 +207,16 @@ export const Header = () => {
                         <div className="flex items-center gap-3 text-[#555] text-base font-medium cursor-pointer" onClick={() => { setIsMobileMenuOpen(false); toggleNotifications(); }}>
                             <Bell size={20} /> 알림
                         </div>
-                        <a href="/login" className="block text-center bg-accent text-white p-3 rounded-lg no-underline font-bold mt-2 hover:bg-[#3949ab]" onClick={() => setIsMobileMenuOpen(false)}>로그인</a>
+                        {isAuthenticated ? (
+                            <button
+                                onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }}
+                                className="block w-full text-center bg-gray-100 text-[#333] p-3 rounded-lg border-none font-bold mt-2 hover:bg-gray-200 cursor-pointer"
+                            >
+                                로그아웃
+                            </button>
+                        ) : (
+                            <a href="/login" className="block text-center bg-accent text-white p-3 rounded-lg no-underline font-bold mt-2 hover:bg-[#3949ab]" onClick={() => setIsMobileMenuOpen(false)}>로그인</a>
+                        )}
                     </div>
                 </div>
             )}

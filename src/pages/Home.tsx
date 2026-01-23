@@ -28,7 +28,7 @@ export const Home = () => {
                 <div className="absolute -bottom-[50px] right-[10%] h-[400px] w-[400px] rounded-full bg-white/10" />
 
                 <div className="relative z-10 w-full max-w-[800px] px-5">
-                    <h1 className="mb-2 text-5xl font-extrabold leading-tight text-white drop-shadow-md md:text-6xl">
+                    <h1 className="mb-5 text-5xl font-extrabold leading-tight text-white drop-shadow-md md:text-6xl">
                         한정판 거래의 새로운 기준
                     </h1>
                     <p className="mb-12 text-xl font-medium text-white/90">
