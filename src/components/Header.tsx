@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Header.css';
 import { ShoppingCart, Package, User, Bell } from 'lucide-react';
+import { Logo } from './Logo';
 
 const INITIAL_NOTIFICATIONS = [
     { id: 1, text: "관심 상품 <strong>조던 1 시카고</strong>의 가격이 하락했습니다.", time: "방금 전", unread: false },
@@ -104,9 +105,7 @@ export const Header = () => {
         <header className="header">
             <div className="header-container">
                 <a href="/" className="logo-link">
-                    <div className="logo">
-                        Resello
-                    </div>
+                    <Logo size="lg" />
                 </a>
                 <nav className="nav font-pretendard">
                     <a href="/shop" className="nav-link">쇼핑</a>
