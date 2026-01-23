@@ -3,7 +3,7 @@ import './Header.css';
 import { ShoppingCart, Package, User, Bell } from 'lucide-react';
 
 const INITIAL_NOTIFICATIONS = [
-    { id: 1, text: "관심 상품 <strong>조던 1 시카고</strong>의 가격이 하락했습니다.", time: "방금 전", unread: true },
+    { id: 1, text: "관심 상품 <strong>조던 1 시카고</strong>의 가격이 하락했습니다.", time: "방금 전", unread: false },
     { id: 2, text: "새로운 스타일 챌린지가 시작되었습니다!", time: "1시간 전", unread: false },
     { id: 3, text: "배송이 시작되었습니다.", time: "어제", unread: false },
     { id: 4, text: "관심 상품 <strong>나이키 덩크 로우</strong> 재입고 알림", time: "2일 전", unread: false },

@@ -179,13 +179,13 @@
     cursor: pointer;
 }
 
-.notif-item:hover {
-    background: #fdfdfd;
-}
-
 .notif-item.unread {
     background: #fff8f6;
     /* Very light peach/pink tint */
+}
+
+.notif-item:hover {
+    background: #fff1ec;
 }
 
 .notif-text {
