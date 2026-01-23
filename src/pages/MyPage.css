@@ -217,3 +217,110 @@
         width: 100%;
     }
 }
+
+/* Deposit Tab Styles */
+.current-balance-box {
+    background: #fff5f2;
+    /* Very light pink background */
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+}
+
+.balance-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.balance-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #ff5f3f;
+}
+
+.balance-actions {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, background-color 0.2s;
+}
+
+.action-btn.charge {
+    background: #ff5f3f;
+    color: #fff;
+}
+
+.action-btn.charge:hover {
+    background: #e65538;
+}
+
+.action-btn.withdraw {
+    background: #f5f5f5;
+    color: #333;
+}
+
+.action-btn.withdraw:hover {
+    background: #ebebeb;
+}
+
+.subsection-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.transaction-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.transaction-item:last-child {
+    border-bottom: none;
+}
+
+.tx-type {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.tx-date {
+    font-size: 13px;
+    color: #999;
+}
+
+.tx-amount {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.tx-amount.positive {
+    color: #00b140;
+    /* Green for charge/positive */
+}
+
+.tx-amount.negative {
+    color: #ff5f3f;
+    /* Orange/Red for spend/negative */
+}
