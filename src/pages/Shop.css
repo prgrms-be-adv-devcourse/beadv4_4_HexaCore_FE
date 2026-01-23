@@ -1,6 +1,7 @@
 /* Shop Styles */
 .shop-container {
-    max-width: var(--container-width);
+    max-width: 100%;
+    /* Unlock width to allow more columns */
     margin: 0 auto;
     padding: var(--spacing-xl) var(--spacing-md);
     display: flex;
@@ -11,6 +12,21 @@
     width: 200px;
     flex-shrink: 0;
 }
+
+/* ... existing styles ... */
+
+/* Higher specificity to override Home.css */
+.product-grid.shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 250px);
+    justify-content: center;
+    gap: 20px;
+    max-width: 1350px;
+    /* Limit to 5 columns max */
+    margin: 0 auto;
+}
+
+/* Removed conflicting media query forcing 2 columns */
 
 .filter-section {
     margin-bottom: var(--spacing-xl);
@@ -55,12 +71,14 @@
 }
 
 /* Reuse product grid but verify specificity */
-.shop-grid {
-    grid-template-columns: repeat(3, 1fr);
+/* Sidebar Styles from Shop.tsx */
+.sidebar-section {
+    margin-bottom: 40px;
 }
 
-@media (max-width: 1024px) {
-    .shop-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+.sidebar-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #000;
 }

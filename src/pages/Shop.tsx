@@ -79,7 +79,7 @@ export const Shop = () => {
                         <h3>전체 상품</h3>
                         <span className="section-count">{SHOP_PRODUCTS.length}개 상품</span>
                     </div>
-                    <div className="product-grid">
+                    <div className="product-grid shop-grid">
                         {SHOP_PRODUCTS.map(product => (
                             <ProductCard key={product.id} {...product} />
                         ))}

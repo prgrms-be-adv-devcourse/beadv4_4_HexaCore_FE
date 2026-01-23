@@ -1,4 +1,14 @@
 /* ProductCard Styles */
+.product-card-link {
+    display: block;
+    width: 250px;
+    /* Fixed width as requested */
+    text-decoration: none;
+    color: inherit;
+    margin: 0 auto;
+    /* Center in grid cell */
+}
+
 .product-card {
     display: flex;
     flex-direction: column;
