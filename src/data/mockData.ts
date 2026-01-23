@@ -4,12 +4,38 @@ export interface Product {
     name: string;
     price: number;
     imageUrl: string;
+    images?: string[];
     tags?: string[];
 }
 
 export const SHOP_PRODUCTS: Product[] = [
-    { id: '1', brand: 'Nike', name: 'Nike Air Force 1 \'07 White', price: 139000, imageUrl: 'https://placehold.co/400x400/png?text=Air+Force+1' },
-    { id: '2', brand: 'Adidas', name: 'Adidas Samba OG Cloud White', price: 150000, imageUrl: 'https://placehold.co/400x400/png?text=Samba' },
+    {
+        id: '1',
+        brand: 'Nike',
+        name: 'Nike Air Force 1 \'07 White',
+        price: 139000,
+        imageUrl: 'https://placehold.co/400x400/png?text=AF1+Main',
+        images: [
+            'https://placehold.co/400x400/png?text=AF1+Main',
+            'https://placehold.co/400x400/png?text=AF1+Side',
+            'https://placehold.co/400x400/png?text=AF1+Back',
+            'https://placehold.co/400x400/png?text=AF1+Top',
+            'https://placehold.co/400x400/png?text=AF1+Bottom',
+            'https://placehold.co/400x400/png?text=AF1+Detail'
+        ]
+    },
+    {
+        id: '2',
+        brand: 'Adidas',
+        name: 'Adidas Samba OG Cloud White',
+        price: 150000,
+        imageUrl: 'https://placehold.co/400x400/png?text=Samba+Main',
+        images: [
+            'https://placehold.co/400x400/png?text=Samba+Main',
+            'https://placehold.co/400x400/png?text=Samba+Side',
+            'https://placehold.co/400x400/png?text=Samba+Inside'
+        ]
+    },
     { id: '3', brand: 'Supreme', name: 'Supreme Box Logo Hoodie', price: 500000, imageUrl: 'https://placehold.co/400x400/png?text=Supreme' },
     { id: '4', brand: 'New Balance', name: 'New Balance 530 Steel Grey', price: 129000, imageUrl: 'https://placehold.co/400x400/png?text=NB+530' },
     { id: '5', brand: 'Nike', name: 'Nike Dunk Low Retro Black White', price: 129000, imageUrl: 'https://placehold.co/400x400/png?text=Dunk+Low' },

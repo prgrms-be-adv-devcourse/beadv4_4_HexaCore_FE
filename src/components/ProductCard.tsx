@@ -56,7 +56,7 @@ export const ProductCard = ({ id, brand, name, price, imageUrl, tags }: ProductC
                         </div>
                     )}
                     <div className="mt-auto flex flex-row items-center gap-2.5 font-pretendard">
-                        <span className="text-[16.5px] color-[#888]">즉시 구매가</span>
+                        <span className="text-[14px] text-[#888] tracking-tight">즉시 구매가</span>
                         <span className="text-[16.5px] font-bold text-[#333]">{price.toLocaleString()}원</span>
                     </div>
                 </div>

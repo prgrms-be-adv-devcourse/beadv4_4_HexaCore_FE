@@ -59,14 +59,14 @@ const NotificationDropdown = () => {
     };
 
     return (
-        <div className="absolute top-[48px] right-0 w-[420px] bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] overflow-hidden border border-gray-200 origin-top-right animate-in fade-in zoom-in duration-200 z-[1001]">
-            <div className="bg-[#f8f9fa] p-3 px-4 flex justify-between items-center border-b border-[#efefef] text-[0.9rem] font-bold text-[#333]">
+        <div className="absolute top-[48px] right-0 w-[420px] bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.15)] overflow-hidden border border-solid border-gray-200 origin-top-right animate-in fade-in zoom-in duration-200 z-[1001]">
+            <div className="bg-[#f8f9fa] p-3 px-4 flex justify-between items-center border-b border-solid border-[#efefef] text-[0.9rem] font-bold text-[#333]">
                 <span>알림</span>
                 <span className="text-[0.75rem] color-[#888] cursor-pointer font-medium hover:text-[#333]">모두 읽음</span>
             </div>
             <div className="max-height-[500px] overflow-y-auto" ref={listRef} onScroll={handleScroll}>
                 {notifications.map((notif) => (
-                    <div key={notif.id} className={`p-3 px-4 border-b border-[#f5f5f5] transition-colors cursor-pointer hover:bg-[#e8eaf6] ${notif.unread ? 'bg-[#eef2ff]' : 'bg-white'}`}>
+                    <div key={notif.id} className={`p-3 px-4 border-b border-solid border-[#f5f5f5] transition-colors cursor-pointer hover:bg-[#e8eaf6] ${notif.unread ? 'bg-[#eef2ff]' : 'bg-white'}`}>
                         <p className="notif-text text-[0.85rem] text-[#333] leading-relaxed mb-1" dangerouslySetInnerHTML={{ __html: notif.text }}></p>
                         <span className="text-[0.75rem] text-[#999]">{notif.time}</span>
                     </div>
@@ -170,14 +170,14 @@ export const Header = () => {
 
             {/* Mobile Menu Overlay */}
             {isMobileMenuOpen && (
-                <div className="absolute top-full left-0 right-0 bg-white m-2.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-6 flex flex-col gap-6 z-[999] border border-black/5 animate-in slide-in-from-top-2 duration-300" ref={mobileMenuRef}>
+                <div className="absolute top-full left-0 right-0 bg-white m-2.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.1)] p-6 flex flex-col gap-6 z-[999] border border-solid border-black/5 animate-in slide-in-from-top-2 duration-300" ref={mobileMenuRef}>
                     <nav className="flex flex-col gap-4 font-pretendard">
                         <a href="/" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>HOME</a>
                         <a href="/shop" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>SHOP</a>
                         <a href="/style" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>STYLE</a>
                         <a href="/saved" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>SAVED</a>
                     </nav>
-                    <div className="border-t border-[#f0f0f0] pt-6 flex flex-col gap-4 font-pretendard">
+                    <div className="border-t border-solid border-[#f0f0f0] pt-6 flex flex-col gap-4 font-pretendard">
                         <Link to="/cart" className="flex items-center gap-3 no-underline text-[#555] text-base font-medium" onClick={() => setIsMobileMenuOpen(false)}>
                             <ShoppingCart size={20} /> 장바구니
                         </Link>
