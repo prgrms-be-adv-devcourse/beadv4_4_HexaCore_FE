@@ -34,8 +34,6 @@
     background-clip: text;
     color: transparent;
     letter-spacing: -1px;
-    font-family: 'Inter', sans-serif;
-    /* Ensure clean sans-serif */
 }
 
 .nav {

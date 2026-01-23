@@ -12,6 +12,8 @@ export default {
             fontFamily: {
                 sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
                 pretendard: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+                inter: ['Inter', 'sans-serif'],
+                'noto-sans': ['"Noto Sans"', 'sans-serif'],
             },
         },
     },
