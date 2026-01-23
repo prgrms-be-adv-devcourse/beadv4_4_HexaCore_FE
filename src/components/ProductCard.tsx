@@ -32,8 +32,8 @@ export const ProductCard = ({ id, brand, name, price, imageUrl, tags }: ProductC
                         </div>
                     )}
                     <div className="product-price">
-                        <span className="price-amount">{price.toLocaleString()}원</span>
                         <span className="price-label">즉시 구매가</span>
+                        <span className="price-amount">{price.toLocaleString()}원</span>
                     </div>
                 </div>
             </div>
