@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ProductCard } from '../components/ProductCard';
-import { Search } from 'lucide-react';
+import { SearchBar } from '../components/SearchBar';
 
 // Mock Data
 const DROPPED_PRODUCTS = [
@@ -35,16 +35,7 @@ export const Home = () => {
                         안전하고 투명한 입찰 시스템으로 원하는 가격에 거래하세요
                     </p>
 
-                    <div className="mx-auto flex w-full max-w-[600px] items-center rounded-[30px] bg-white py-2 pr-2 pl-6 shadow-lg">
-                        <input
-                            type="text"
-                            className="flex-1 border-none bg-transparent text-base text-[#333] outline-none placeholder:text-[#999]"
-                            placeholder="브랜드, 상품명으로 검색"
-                        />
-                        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-[#3949ab]">
-                            <Search size={20} />
-                        </button>
-                    </div>
+                    <SearchBar maxWidth="600px" />
                 </div>
             </section>
 
@@ -54,10 +45,10 @@ export const Home = () => {
                     {CATEGORIES.map(cat => (
                         <li key={cat}>
                             <button
-                                className={`rounded-[20px] border border-[#eee] px-5 py-2 text-sm transition-all duration-200 cursor-pointer
+                                className={`rounded-[20px] border border-solid px-5 py-2 text-sm transition-all duration-200 cursor-pointer
                                     ${activeCategory === cat
-                                        ? 'bg-white border-[#ddd] font-bold text-[#333] shadow-sm'
-                                        : 'bg-white text-[#888] hover:bg-white hover:border-[#ddd] hover:text-[#333] hover:shadow-sm'
+                                        ? 'bg-white border-[#5c6bc0]/40 text-[#333] font-bold shadow-[0_2px_8px_rgba(92,107,192,0.2)] -translate-y-[0.5px]'
+                                        : 'bg-white border-gray-200 text-[#888] hover:border-gray-300 hover:text-[#333]'
                                     }`}
                                 onClick={() => setActiveCategory(cat)}
                             >
@@ -70,7 +61,7 @@ export const Home = () => {
 
             {/* Product Section */}
             <section className="mx-auto max-w-[1500px] px-10 py-8">
-                <div className="mb-8 flex items-center justify-between border-b border-gray-400 pb-4">
+                <div className="mb-8 flex items-center justify-between border-b border-gray-100 pb-4">
                     <h3 className="text-2xl font-bold text-[#333]">인기 상품</h3>
                     <span className="text-sm text-[#888]">{DROPPED_PRODUCTS.length}개 상품</span>
                 </div>

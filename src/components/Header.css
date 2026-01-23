@@ -39,6 +39,8 @@
 .nav {
     display: flex;
     gap: 2.5rem;
+    margin-left: 110px;
+    /* Nudge to the right for balance */
 }
 
 .nav-link {
@@ -127,7 +129,7 @@
 .notif-dropdown {
     position: absolute;
     top: 45px;
-    right: 0;
+    right: -383px;
     width: 420px;
     background: white;
     border-radius: 12px;
@@ -205,4 +207,111 @@
 .notif-time {
     font-size: 0.75rem;
     color: #999;
+}
+
+/* Responsive Styles */
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #333;
+    padding: 8px;
+}
+
+.desktop-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .nav {
+        display: none;
+    }
+
+    .desktop-actions {
+        display: none;
+    }
+
+    .mobile-menu-btn {
+        display: block;
+    }
+
+    .header-container {
+        padding: 0.5rem 1.5rem;
+    }
+}
+
+.mobile-menu-overlay {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    margin: 10px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    z-index: 999;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.mobile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mobile-nav-link {
+    text-decoration: none;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.mobile-user-actions {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.mobile-action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #555;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.mobile-login-btn {
+    display: block;
+    text-align: center;
+    background: #5c6bc0;
+    color: white;
+    padding: 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    margin-top: 8px;
 }
