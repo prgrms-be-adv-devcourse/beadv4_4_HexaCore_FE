@@ -1,7 +1,7 @@
 .product-detail-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 140px 20px 300px;
     display: flex;
     gap: 60px;
 }
@@ -17,7 +17,8 @@
     background-color: #f4f4f4;
     border-radius: 12px;
     width: 100%;
-    padding-bottom: 100%; /* Square aspect ratio */
+    padding-bottom: 100%;
+    /* Square aspect ratio */
     position: relative;
     overflow: hidden;
 }
@@ -29,8 +30,9 @@
     transform: translate(-50%, -50%);
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cover usually looks better, but contain prevents cropping */
-    object-fit: contain; 
+    object-fit: cover;
+    /* Cover usually looks better, but contain prevents cropping */
+    object-fit: contain;
 }
 
 .product-detail-right {
@@ -57,7 +59,7 @@
 
 .detail-product-name-ko {
     font-size: 14px;
-    color: rgba(34,34,34,.5);
+    color: rgba(34, 34, 34, .5);
     margin-bottom: 20px;
 }
 
@@ -67,7 +69,7 @@
 
 .detail-price-label {
     font-size: 13px;
-    color: rgba(34,34,34,.8);
+    color: rgba(34, 34, 34, .8);
 }
 
 .detail-price-amount {
@@ -109,18 +111,20 @@
 }
 
 .action-btn.buy {
-    background-color: #ef6253;
+    background: linear-gradient(135deg, #FF6B6B 0%, #EE5D50 100%);
+    box-shadow: 0 4px 15px rgba(238, 93, 80, 0.3);
 }
 
 .action-btn.sell {
-    background-color: #41b979;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
 }
 
 .action-sub-text {
     font-size: 11px;
     font-weight: 400;
     margin-top: 2px;
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .wishlist-btn-large {
@@ -180,7 +184,7 @@
 
 .delivery-desc {
     font-size: 13px;
-    color: rgba(34,34,34,.5);
+    color: rgba(34, 34, 34, .5);
     margin-top: 2px;
 }
 
@@ -189,7 +193,7 @@
         flex-direction: column;
         gap: 20px;
     }
-    
+
     .product-detail-left {
         position: static;
     }
