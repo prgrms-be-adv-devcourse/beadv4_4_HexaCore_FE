@@ -145,7 +145,7 @@ export const Header = () => {
                 <nav className="hidden md:flex gap-6 lg:gap-10 ml-8 lg:ml-[110px] font-pretendard">
                     <a href="/" className="no-underline text-[#333] font-bold text-base opacity-90 transition-opacity hover:opacity-100">HOME</a>
                     <a href="/shop" className="no-underline text-[#333] font-bold text-base opacity-90 transition-opacity hover:opacity-100">SHOP</a>
-                    <a href="/style" className="no-underline text-[#333] font-bold text-base opacity-90 transition-opacity hover:opacity-100">STYLE</a>
+                    <a href="/community" className="no-underline text-[#333] font-bold text-base opacity-90 transition-opacity hover:opacity-100">COMMUNITY</a>
                     <a href="/saved" className="no-underline text-[#333] font-bold text-base opacity-90 transition-opacity hover:opacity-100">SAVED</a>
                 </nav>
 
@@ -197,7 +197,7 @@ export const Header = () => {
                     <nav className="flex flex-col gap-4 font-pretendard">
                         <a href="/" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>HOME</a>
                         <a href="/shop" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>SHOP</a>
-                        <a href="/style" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>STYLE</a>
+                        <a href="/community" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>COMMUNITY</a>
                         <a href="/saved" className="no-underline text-[#333] text-[1.1rem] font-bold" onClick={() => setIsMobileMenuOpen(false)}>SAVED</a>
                     </nav>
                     <div className="border-t border-solid border-[#f0f0f0] pt-6 flex flex-col gap-4 font-pretendard">

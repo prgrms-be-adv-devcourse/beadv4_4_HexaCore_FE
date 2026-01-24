@@ -7,7 +7,7 @@ import { Cart } from './pages/Cart';
 import { MyPage } from './pages/MyPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { SavedPage } from './pages/SavedPage';
-import { StylePage } from './pages/StylePage';
+import { Community } from './pages/Community';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 
 function App() {
@@ -22,7 +22,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/shop" element={<Shop />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
-          <Route path="/style" element={<StylePage />} />
+          <Route path="/community" element={<Community />} />
           <Route path="/saved" element={<SavedPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/cart" element={<Cart />} />

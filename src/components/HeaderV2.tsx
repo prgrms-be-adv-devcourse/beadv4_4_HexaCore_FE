@@ -139,7 +139,7 @@ export const HeaderV2 = () => {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex items-center gap-2">
-                        {['HOME', 'SHOP', 'STYLE', 'SAVED'].map((item) => (
+                        {['HOME', 'SHOP', 'COMMUNITY', 'SAVED'].map((item) => (
                             <Link
                                 key={item}
                                 to={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
@@ -225,7 +225,7 @@ export const HeaderV2 = () => {
                     className="absolute top-full left-0 right-0 bg-white shadow-2xl border-t border-gray-50 flex flex-col p-8 z-[999] animate-in slide-in-from-top duration-300"
                 >
                     <nav className="flex flex-col gap-6 mb-8">
-                        {['HOME', 'SHOP', 'STYLE', 'SAVED'].map((item) => (
+                        {['HOME', 'SHOP', 'COMMUNITY', 'SAVED'].map((item) => (
                             <Link
                                 key={item}
                                 to={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
