@@ -40,7 +40,7 @@ export const Home = () => {
             </section>
 
             {/* Category Navigation */}
-            <div className="sticky top-[70px] z-[50] border-b border-[#eee] bg-white py-4">
+            <div className="sticky top-[60px] z-[50] border-b border-[#eee] bg-white py-4">
                 <ul className="flex justify-center gap-4 m-0 p-0 list-none">
                     {CATEGORIES.map(cat => (
                         <li key={cat}>

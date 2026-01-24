@@ -16,7 +16,7 @@ export const Shop = () => {
     return (
         <div className="min-h-screen bg-white">
             {/* Search Section */}
-            <div className="pt-[100px] pb-10 bg-white border-b border-[#f0f0f0]">
+            <div className="pt-[80px] pb-10 bg-white border-b border-[#f0f0f0]">
                 <SearchBar />
             </div>
 
