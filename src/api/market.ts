@@ -39,3 +39,12 @@ export const registerSellBid = async (productId: number, price: number, size: st
     const response = await marketInstance.post('/api/v1/market/bids/sell', { productId, price, size });
     return response.data;
 };
+export const buyNow = async (productId: number, price: number, size: string) => {
+    const response = await marketInstance.post('/api/v1/market/buy-now', { productId, price, size });
+    return response.data;
+};
+
+export const sellNow = async (productId: number, price: number, size: string) => {
+    const response = await marketInstance.post('/api/v1/market/sell-now', { productId, price, size });
+    return response.data;
+};

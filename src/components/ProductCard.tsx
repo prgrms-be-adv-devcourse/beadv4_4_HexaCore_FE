@@ -1,8 +1,6 @@
 import { useWishlistStore } from '../store/useWishlistStore';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { getBuyNowPrice } from '../api/market';
 
 interface ProductCardProps {
     id: string;
@@ -11,42 +9,11 @@ interface ProductCardProps {
     price: number;
     imageUrl: string;
     sizeIds?: { [size: string]: number };
-    tags?: string[];
 }
 
-export const ProductCard = ({ id, brand, name, price, imageUrl, sizeIds, tags }: ProductCardProps) => {
+export const ProductCard = ({ id, brand, name, price, imageUrl, sizeIds }: ProductCardProps) => {
     const { toggleWishlist, wishlistIds } = useWishlistStore();
     const isLiked = wishlistIds.includes(id);
-    const [liveBuyNowPrice, setLiveBuyNowPrice] = useState<number | null>(null);
-
-    useEffect(() => {
-        const fetchLowestBuyNowPrice = async () => {
-            if (!sizeIds) return;
-
-            try {
-                const sIds = Object.values(sizeIds);
-                const results = await Promise.all(
-                    sIds.map(async (sId) => {
-                        try {
-                            const res = await getBuyNowPrice(sId).catch(() => ({ data: null }));
-                            return res?.data?.buyNowPrice || null;
-                        } catch {
-                            return null;
-                        }
-                    })
-                );
-
-                const validPrices = results.filter((p): p is number => p !== null);
-                if (validPrices.length > 0) {
-                    setLiveBuyNowPrice(Math.min(...validPrices));
-                }
-            } catch (error) {
-                console.error("Failed to fetch card buyNow price:", error);
-            }
-        };
-
-        fetchLowestBuyNowPrice();
-    }, [sizeIds]);
 
     const handleToggleLike = (e: React.MouseEvent) => {
         e.preventDefault(); // Prevent Link navigation
@@ -54,7 +21,7 @@ export const ProductCard = ({ id, brand, name, price, imageUrl, sizeIds, tags }:
         toggleWishlist(id);
     };
 
-    const displayPrice = liveBuyNowPrice;
+    const displayPrice = price;
 
     return (
         <Link to={`/products/${id}`} className="block w-[250px] no-underline text-inherit mx-auto group">
@@ -81,19 +48,10 @@ export const ProductCard = ({ id, brand, name, price, imageUrl, sizeIds, tags }:
                 <div className="flex flex-col">
                     <h4 className="text-[16.3px] font-bold text-[#333] mb-1 underline decoration-transparent font-pretendard">{brand}</h4>
                     <p className="text-[17px] text-[#333] leading-[1.4] mb-2 whitespace-nowrap overflow-hidden text-ellipsis block h-auto font-pretendard">{name}</p>
-                    {tags && tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2 font-pretendard">
-                            {tags.map(tag => (
-                                <span key={tag} className="text-[11px] px-2 py-0.5 bg-[#f4f4f4] text-[#888] rounded-sm uppercase tracking-wider font-semibold">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                    <div className="mt-auto flex flex-row items-center gap-2.5 font-pretendard">
-                        <span className="text-[14px] text-[#888] tracking-tight">즉시 구매가</span>
+                    <div className="mt-auto flex flex-col font-pretendard">
+                        <span className="text-[13px] text-[#888] mb-0.5">즉시 구매가</span>
                         <span className="text-[16.5px] font-bold text-[#333]">
-                            {displayPrice !== null ? `${displayPrice.toLocaleString()}원` : ' - '}
+                            {displayPrice !== null ? `${displayPrice.toLocaleString()}원` : `${price.toLocaleString()}원`}
                         </span>
                     </div>
                 </div>

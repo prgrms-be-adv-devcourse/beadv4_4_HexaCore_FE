@@ -104,8 +104,8 @@ export const MyPage = () => {
                                         className="w-full h-full rounded-full object-cover"
                                     />
                                 </div>
-                                <h3 className="text-lg font-bold text-[#333]">김철수</h3>
-                                <p className="text-sm text-gray-400 mb-6">user@example.com</p>
+                                <h3 className="text-lg font-bold text-[#333]">테스터</h3>
+                                <p className="text-sm text-gray-400 mb-6">tester@example.com</p>
 
                                 <div className="w-full pt-6 border-t border-gray-100">
                                     <div className="flex justify-between items-center mb-1">

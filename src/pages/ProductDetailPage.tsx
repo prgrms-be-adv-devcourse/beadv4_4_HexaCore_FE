@@ -366,7 +366,7 @@ export const ProductDetailPage = () => {
                                                                     }}
                                                                     className={`flex-1 h-14 text-white rounded-xl font-bold text-sm transition-colors ${modalMode === 'buy' ? 'bg-[#ff4f4f] hover:bg-[#ff3535]' : 'bg-[#41b979] hover:bg-[#38a56b]'}`}
                                                                 >
-                                                                    {modalMode === 'buy' ? '즉시 구매하기' : '즉시 판매하기'}
+                                                                    {modalMode === 'buy' ? '즉시 구매/구매 입찰' : '즉시 판매/판매 입찰'}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => executeAddToCart(selectedSize!)}
