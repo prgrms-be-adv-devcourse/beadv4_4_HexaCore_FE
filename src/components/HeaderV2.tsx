@@ -183,7 +183,7 @@ export const HeaderV2 = () => {
                         <Search size={18} className="text-gray-500 group-hover:text-black transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search trends..."
+                            placeholder="검색어를 입력하세요"
                             className="bg-transparent border-none outline-none ml-2 text-sm w-32 focus:w-48 transition-all duration-300"
                         />
                     </div>
@@ -195,7 +195,7 @@ export const HeaderV2 = () => {
                             className="p-2.5 rounded-full hover:bg-black/5 transition-colors relative"
                         >
                             <Bell size={20} strokeWidth={2.5} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-indigo-600 rounded-full border-2 border-white" />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full border-2 border-white" />
                         </button>
 
                         {showNotifications && <NotificationDropdown />}
@@ -211,7 +211,7 @@ export const HeaderV2 = () => {
                         <Link to="/cart" className="p-2.5 rounded-full hover:bg-black/5 transition-colors relative">
                             <ShoppingCart size={20} strokeWidth={2.5} />
                             {cartItems.length > 0 && (
-                                <span className="absolute top-1 -right-0.5 bg-black text-white text-[10px] font-bold px-1 min-w-[16px] h-4 rounded-full flex items-center justify-center">
+                                <span className="absolute top-0.5 -right-1 bg-accent text-white text-[10px] font-bold px-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-white">
                                     {cartItems.length}
                                 </span>
                             )}
@@ -220,7 +220,7 @@ export const HeaderV2 = () => {
                         {isAuthenticated ? (
                             <button
                                 onClick={handleLogout}
-                                className="hidden md:block text-[13px] font-bold px-5 py-2 hover:text-indigo-600 transition-colors"
+                                className="hidden md:block text-[13px] font-bold px-5 py-2 hover:text-[#3949ab] transition-colors"
                             >
                                 LOGOUT
                             </button>
