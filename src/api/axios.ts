@@ -38,7 +38,7 @@ axiosInstance.interceptors.response.use(
                 // HttpOnly Cookie를 사용하므로 refreshToken을 body에 보낼 필요 없음
                 // withCredentials: true를 설정하여 쿠키가 서버로 전송되도록 함
                 const response = await axios.post(
-                    `${BASE_URL}api/v1/reissue`,
+                    `${BASE_URL}/api/v1/users/reissue`,
                     {},
                     { withCredentials: true }
                 );

@@ -15,7 +15,7 @@ export const OAuthCallbackPage = () => {
         const handleSocialLoginSuccess = async () => {
             try {
                 // Refresh Token 쿠키를 이용해 Access Token 재발급 요청
-                const response = await axiosInstance.post('/api/v1/reissue');
+                const response = await axiosInstance.post('/api/v1/users/reissue');
 
                 // 공통 응답 객체(CommonResponse)에서 data 추출
                 // 구조: { status: 200, data: { accessToken: "..." }, ... }
