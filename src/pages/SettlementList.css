@@ -1,0 +1,420 @@
+/* 토스페이먼츠 스타일 정산 목록 페이지 */
+
+.sl-number, .sl-stat-value, .sl-amount-value {
+    font-family: var(--font-number, 'Pretendard Variable', -apple-system, system-ui, sans-serif);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.sl-settlement-list {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 90px 24px 60px;
+    min-height: 100vh;
+    background: #f7f8fa;
+}
+
+/* 로딩 & 에러 */
+.sl-loading-container,
+.sl-error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 20px;
+    color: #8b95a1;
+}
+
+.sl-loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e5e8eb;
+    border-top-color: #3182f6;
+    border-radius: 50%;
+    animation: sl-spin 0.8s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes sl-spin {
+    to { transform: rotate(360deg); }
+}
+
+.sl-error-container svg {
+    color: #e03131;
+    margin-bottom: 16px;
+}
+
+.sl-error-container h2 {
+    font-size: 18px;
+    color: #191f28;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.sl-error-container p {
+    margin-bottom: 24px;
+    font-size: 15px;
+}
+
+.sl-error-container button {
+    padding: 12px 24px;
+    background: #3182f6;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sl-error-container button:hover {
+    background: #1b6ee3;
+}
+
+/* 헤더 */
+.sl-list-header {
+    margin-bottom: 24px;
+}
+
+.sl-list-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #191f28;
+    letter-spacing: -0.02em;
+}
+
+/* 요약 섹션 */
+.sl-summary-section {
+    display: flex;
+    gap: 40px;
+    padding: 28px 32px;
+    background: #fff;
+    border-radius: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sl-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sl-summary-label {
+    font-size: 14px;
+    color: #8b95a1;
+    font-weight: 500;
+}
+
+.sl-summary-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #191f28;
+    letter-spacing: -0.02em;
+}
+
+.sl-summary-value.highlight {
+    color: #3182f6;
+}
+
+/* 날짜 필터 섹션 */
+.sl-date-filter-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    background: #fff;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sl-filter-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #191f28;
+    flex-shrink: 0;
+}
+
+.sl-date-inputs {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sl-date-input {
+    padding: 10px 14px;
+    border: 1px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #191f28;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sl-date-input:focus {
+    outline: none;
+    border-color: #3182f6;
+    box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.1);
+}
+
+.sl-date-separator {
+    color: #8b95a1;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.sl-filter-reset {
+    padding: 10px 16px;
+    background: #f7f8fa;
+    border: 1px solid #e5e8eb;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4e5968;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sl-filter-reset:hover {
+    background: #e5e8eb;
+}
+
+/* 정산 목록 컨테이너 */
+.sl-settlements-container {
+    margin-bottom: 24px;
+}
+
+.sl-empty-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    background: #fff;
+    border-radius: 16px;
+    color: #8b95a1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sl-empty-list p {
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* 정산 카드 */
+.sl-settlements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sl-settlement-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid transparent;
+}
+
+.sl-settlement-card:hover {
+    border-color: #3182f6;
+    box-shadow: 0 4px 16px rgba(49, 130, 246, 0.12);
+    transform: translateY(-2px);
+}
+
+.sl-settlement-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.sl-settlement-period {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #191f28;
+    letter-spacing: -0.02em;
+}
+
+.sl-settlement-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.sl-settlement-status.pending { background: #fff3e0; color: #e65100; }
+.sl-settlement-status.in-progress { background: #e3f2fd; color: #1565c0; }
+.sl-settlement-status.hold { background: #f3e5f5; color: #7b1fa2; }
+.sl-settlement-status.completed { background: #e8f5e9; color: #2e7d32; }
+.sl-settlement-status.failed { background: #ffebee; color: #c62828; }
+
+/* 금액 정보 */
+.sl-settlement-amounts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 0;
+    border-top: 1px solid #f2f4f6;
+    border-bottom: 1px solid #f2f4f6;
+}
+
+.sl-amount-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sl-amount-label {
+    font-size: 14px;
+    color: #8b95a1;
+    font-weight: 500;
+}
+
+.sl-amount-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #191f28;
+}
+
+.sl-amount-value.fee {
+    color: #e03131;
+}
+
+.sl-amount-row.net {
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px dashed #e5e8eb;
+}
+
+.sl-amount-row.net .sl-amount-label {
+    font-weight: 600;
+    color: #191f28;
+}
+
+.sl-amount-value.net {
+    font-size: 20px;
+    font-weight: 700;
+    color: #3182f6;
+}
+
+/* 푸터 */
+.sl-settlement-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.sl-settlement-date {
+    font-size: 13px;
+    color: #8b95a1;
+    font-weight: 500;
+}
+
+.sl-arrow-icon {
+    color: #d1d6db;
+    transition: all 0.2s ease;
+}
+
+.sl-settlement-card:hover .sl-arrow-icon {
+    color: #3182f6;
+    transform: translateX(4px);
+}
+
+/* 안내 섹션 */
+.sl-info-section {
+    padding: 24px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.sl-info-section h4 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #191f28;
+    margin-bottom: 16px;
+}
+
+.sl-info-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sl-info-section li {
+    position: relative;
+    padding-left: 16px;
+    font-size: 14px;
+    color: #4e5968;
+    line-height: 2;
+}
+
+.sl-info-section li::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+    color: #3182f6;
+    font-weight: bold;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .sl-settlement-list {
+        padding: 80px 16px 40px;
+    }
+
+    .sl-list-header h1 {
+        font-size: 22px;
+    }
+
+    .sl-summary-section {
+        flex-direction: column;
+        gap: 20px;
+        padding: 24px;
+    }
+
+    .sl-summary-value {
+        font-size: 20px;
+    }
+
+    .sl-date-filter-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .sl-date-inputs {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .sl-date-input {
+        flex: 1;
+        min-width: 130px;
+    }
+
+    .sl-settlement-card {
+        padding: 20px;
+    }
+
+    .sl-settlement-period {
+        font-size: 16px;
+    }
+
+    .sl-amount-value.net {
+        font-size: 18px;
+    }
+}

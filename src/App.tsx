@@ -14,13 +14,16 @@ import { SalesBiddingPage } from './pages/SalesBiddingPage';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentFailPage } from './pages/PaymentFailPage';
 import { CheckoutPage } from './pages/CheckoutPage';
+import { AdminSettlement } from './pages/admin/AdminSettlement';
+import { SettlementList } from './pages/SettlementList';
+import { SettlementDetail } from './pages/SettlementDetail';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* 소셜 로그인 Callback 라우트 */}
-        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+      <BrowserRouter>
+        <Routes>
+          {/* 소셜 로그인 Callback 라우트 */}
+          <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
         {/* 메인 레이아웃 적용 라우트 */}
         <Route element={<MainLayout />}>
@@ -35,6 +38,9 @@ function App() {
           <Route path="/products/:id/bid" element={<PurchaseBiddingPage />} />
           <Route path="/products/:id/sell" element={<SalesBiddingPage />} />
           <Route path="/checkout/:id" element={<CheckoutPage />} />
+          <Route path="/mypage/settlement" element={<SettlementList />} />
+          <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
+          <Route path="/admin/settlement" element={<AdminSettlement />} />
         </Route>
 
         {/* 결제 결과 페이지: 헤더/푸터 없이 독립적인 화면 구성 */}
