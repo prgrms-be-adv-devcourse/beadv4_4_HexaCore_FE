@@ -1,58 +1,14 @@
-import { useState } from 'react';
 import { X, ShoppingBag } from 'lucide-react';
-
-interface CartItem {
-    id: string;
-    brand: string;
-    name: string;
-    size: string;
-    price: number;
-    imageUrl: string;
-    selected: boolean;
-}
-
-const INITIAL_CART_ITEMS: CartItem[] = [
-    {
-        id: '1',
-        brand: 'Nike',
-        name: 'Nike Air Jordan 1 Retro High OG Chicago',
-        size: '270',
-        price: 450000,
-        imageUrl: 'https://placehold.co/400x400/png?text=Jordan+1+Chicago',
-        selected: true
-    },
-    {
-        id: '2',
-        brand: 'Supreme',
-        name: 'Supreme Box Logo Hoodie Black',
-        size: 'L',
-        price: 850000,
-        imageUrl: 'https://placehold.co/400x400/png?text=Supreme+Box+Logo',
-        selected: true
-    },
-];
+import { useCartStore } from '../store/cartStore';
 
 export const Cart = () => {
-    const [cartItems, setCartItems] = useState<CartItem[]>(INITIAL_CART_ITEMS);
-
-    const toggleSelect = (id: string) => {
-        setCartItems(prev => prev.map(item =>
-            item.id === id ? { ...item, selected: !item.selected } : item
-        ));
-    };
-
-    const toggleSelectAll = () => {
-        const allSelected = cartItems.length > 0 && cartItems.every(item => item.selected);
-        setCartItems(prev => prev.map(item => ({ ...item, selected: !allSelected })));
-    };
-
-    const removeItem = (id: string) => {
-        setCartItems(prev => prev.filter(item => item.id !== id));
-    };
-
-    const removeSelectedItems = () => {
-        setCartItems(prev => prev.filter(item => !item.selected));
-    };
+    const {
+        cartItems,
+        toggleSelect,
+        toggleSelectAll,
+        removeItem,
+        removeSelectedItems
+    } = useCartStore();
 
     const selectedItems = cartItems.filter(item => item.selected);
     const productAmount = selectedItems.reduce((sum, item) => sum + item.price, 0);
