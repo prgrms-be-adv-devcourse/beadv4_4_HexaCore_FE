@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Package, User, Bell, Menu, X } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
+import { useWishlistStore } from '../store/useWishlistStore';
 import { logout } from '../api/auth';
 
 const INITIAL_NOTIFICATIONS = [
@@ -85,9 +87,13 @@ export const Header = () => {
     const notifContainerRef = useRef<HTMLDivElement>(null);
     const mobileMenuRef = useRef<HTMLDivElement>(null);
     const { isAuthenticated } = useAuthStore();
+    const { clearCart } = useCartStore();
+    const { clearWishlist } = useWishlistStore();
 
     const handleLogout = async () => {
         await logout();
+        clearCart();
+        clearWishlist();
         window.location.href = '/';
     };
 

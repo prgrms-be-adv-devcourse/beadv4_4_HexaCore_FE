@@ -5,6 +5,7 @@ interface WishlistState {
     wishlistIds: string[];
     toggleWishlist: (productId: string) => void;
     isWishlisted: (productId: string) => boolean;
+    clearWishlist: () => void;
 }
 
 export const useWishlistStore = create<WishlistState>()(
@@ -24,6 +25,7 @@ export const useWishlistStore = create<WishlistState>()(
             isWishlisted: (productId: string) => {
                 return get().wishlistIds.includes(productId);
             },
+            clearWishlist: () => set({ wishlistIds: [] }),
         }),
         {
             name: 'wishlist-storage', // LocalStorage Key
