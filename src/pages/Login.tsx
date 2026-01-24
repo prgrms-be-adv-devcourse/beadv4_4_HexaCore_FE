@@ -11,8 +11,8 @@ export const Login = () => {
     const navigate = useNavigate();
 
     const handleSocialLogin = (provider: string) => {
-        // 백엔드 OAuth2 Authorization Endpoint로 리다이렉트
-        const backendUrl = `http://localhost:8080/oauth2/authorization/${provider.toLowerCase()}`;
+        // Vite Proxy를 활용하여 백엔드 OAuth2 Authorization Endpoint로 리다이렉트
+        const backendUrl = `/oauth2/authorization/${provider.toLowerCase()}`;
         window.location.href = backendUrl;
     };
 
