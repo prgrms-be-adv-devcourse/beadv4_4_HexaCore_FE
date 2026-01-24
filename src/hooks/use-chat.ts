@@ -123,17 +123,12 @@ function parseWsChatMessage(payload: unknown): ChatMessage | null {
  *  REST API
  *  ========================= */
 
+import axiosInstance from "../api/axios";
+
 // Enter chat room
 export async function enterChatRoom(brandId: number): Promise<ChatRoomEnterResponseDto> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/chat/enter?brandId=${brandId}`, {
-    method: "POST",
-    credentials: "include",
-  });
-
-  if (!response.ok) throw new Error("채팅방 입장에 실패했습니다.");
-
-  const result: CommonResponse<ChatRoomEnterResponseDto> = await response.json();
-  return result.data;
+  const response = await axiosInstance.post(`/api/v1/chat/enter?brandId=${brandId}`);
+  return response.data.data;
 }
 
 // Get chat history
@@ -143,32 +138,20 @@ export async function getChatHistory(
 ): Promise<ChatMessageHistoryResponseDto> {
   const params = new URLSearchParams({ roomId: String(roomId) });
 
-  // cursorMessageId가 0일 수도 있으니 truthy 체크 금지
   if (cursorMessageId !== undefined && cursorMessageId !== null) {
     params.append("cursorMessageId", String(cursorMessageId));
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/chat/history?${params}`, {
-    method: "GET",
-    credentials: "include",
-  });
-
-  if (!response.ok) throw new Error("채팅 히스토리 조회에 실패했습니다.");
-
-  const result: CommonResponse<ChatMessageHistoryResponseDto> = await response.json();
-  return result.data;
+  const response = await axiosInstance.get(`/api/v1/chat/history?${params}`);
+  return response.data.data;
 }
 
 // Report message (요청 DTO: chatMessageId + reportReason(enum string))
 export async function reportMessage(chatMessageId: number, reportReason: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/chat/report`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chatMessageId, reportReason }),
+  await axiosInstance.post("/api/v1/chat/report", {
+    chatMessageId,
+    reportReason,
   });
-
-  if (!response.ok) throw new Error("메시지 신고에 실패했습니다.");
 }
 
 /** =========================
