@@ -7,45 +7,65 @@ import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { logout } from '../api/auth';
 
-const INITIAL_NOTIFICATIONS = [
-    { id: 1, text: "관심 상품 <strong>조던 1 시카고</strong>의 가격이 하락했습니다.", time: "방금 전", unread: true },
-    { id: 2, text: "새로운 스타일 챌린지가 시작되었습니다!", time: "1시간 전", unread: false },
-    { id: 3, text: "배송이 시작되었습니다.", time: "어제", unread: false },
-    { id: 4, text: "관심 상품 <strong>나이키 덩크 로우</strong> 재입고 알림", time: "2일 전", unread: false },
-    { id: 5, text: "회원 등급이 상향 조정되었습니다.", time: "3일 전", unread: false },
-];
+import { useNavigate } from 'react-router-dom';
+import { getNotifications, type NotificationResponse } from '../api/notification';
 
 const NotificationDropdown = () => {
-    const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
     const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(0);
+    const [hasNext, setHasNext] = useState(true);
     const listRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
-    const loadMoreNotifications = useCallback(() => {
-        if (loading || notifications.length >= 15) return;
+    const fetchNotifications = useCallback(async (pageNum: number) => {
+        if (loading) return;
         setLoading(true);
-
-        setTimeout(() => {
-            const currentLength = notifications.length;
-            const moreNotifications = Array.from({ length: 3 }).map((_, i) => ({
-                id: currentLength + i + 1,
-                text: `이전 알림 내용입니다. #${currentLength + i + 1}`,
-                time: `${currentLength + i}일 전`,
-                unread: false
-            }));
-
-            setNotifications(prev => [...prev, ...moreNotifications]);
+        try {
+            const response = await getNotifications(pageNum, 5);
+            if (response.code === "OK") {
+                setNotifications(prev => pageNum === 0 ? response.data.notificationResponses : [...prev, ...response.data.notificationResponses]);
+                setHasNext(response.data.hasNext);
+                setPage(pageNum);
+            }
+        } catch (error) {
+            console.error("Failed to fetch notifications", error);
+        } finally {
             setLoading(false);
-        }, 800);
-    }, [loading, notifications.length]);
+        }
+    }, [loading]);
+
+    useEffect(() => {
+        fetchNotifications(0);
+    }, []);
 
     const handleScroll = () => {
         const list = listRef.current;
         if (list) {
             const { scrollTop, scrollHeight, clientHeight } = list;
-            if (scrollTop + clientHeight >= scrollHeight - 20) {
-                loadMoreNotifications();
+            if (scrollTop + clientHeight >= scrollHeight - 20 && hasNext && !loading) {
+                fetchNotifications(page + 1);
             }
         }
+    };
+
+    const handleNotificationClick = (deepLink: string) => {
+        navigate(deepLink);
+    };
+
+    // 시간 포맷팅 함수 (ISO string -> n분/시간/일 전)
+    const formatTimeAgo = (dateString: string) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        if (diffInSeconds < 60) return "방금 전";
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24) return `${diffInHours}시간 전`;
+        const diffInDays = Math.floor(diffInHours / 24);
+        return `${diffInDays}일 전`;
     };
 
     return (
@@ -56,17 +76,22 @@ const NotificationDropdown = () => {
             </div>
             <div className="max-h-[400px] overflow-y-auto scrollbar-hide" ref={listRef} onScroll={handleScroll}>
                 {notifications.map((notif) => (
-                    <div key={notif.id} className={`p-4 px-5 border-b border-gray-50 transition-all cursor-pointer hover:bg-black/5 ${notif.unread ? 'bg-indigo-50/50' : ''}`}>
+                    <div
+                        key={notif.id}
+                        onClick={() => handleNotificationClick(notif.deepLink)}
+                        className={`p-4 px-5 border-b border-gray-50 transition-all cursor-pointer hover:bg-black/5 ${!notif.isRead ? 'bg-indigo-50/50' : ''}`}
+                    >
                         <div className="flex gap-3">
-                            {notif.unread && <div className="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 flex-shrink-0" />}
+                            {!notif.isRead && <div className="w-2 h-2 rounded-full bg-indigo-600 mt-1.5 flex-shrink-0" />}
                             <div>
-                                <p className="text-[13px] text-gray-800 leading-snug mb-1" dangerouslySetInnerHTML={{ __html: notif.text }}></p>
-                                <span className="text-[11px] text-gray-400 font-medium">{notif.time}</span>
+                                <p className="text-[13px] text-gray-800 leading-snug mb-1" dangerouslySetInnerHTML={{ __html: notif.body }}></p>
+                                <span className="text-[11px] text-gray-400 font-medium">{formatTimeAgo(notif.createdAt)}</span>
                             </div>
                         </div>
                     </div>
                 ))}
                 {loading && <div className="p-4 text-center text-gray-400 text-xs">불러오는 중...</div>}
+                {!loading && notifications.length === 0 && <div className="p-4 text-center text-gray-400 text-xs">새로운 알림이 없습니다.</div>}
             </div>
         </div>
     );
