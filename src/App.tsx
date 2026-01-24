@@ -9,6 +9,10 @@ import { ProductDetailPage } from './pages/ProductDetailPage';
 import { SavedPage } from './pages/SavedPage';
 import { Community } from './pages/Community';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
+import { PurchaseBiddingPage } from './pages/PurchaseBiddingPage';
+import { SalesBiddingPage } from './pages/SalesBiddingPage';
+import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
+import { PaymentFailPage } from './pages/PaymentFailPage';
 
 function App() {
   return (
@@ -27,7 +31,13 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/products/:id/bid" element={<PurchaseBiddingPage />} />
+          <Route path="/products/:id/sell" element={<SalesBiddingPage />} />
         </Route>
+
+        {/* 결제 결과 페이지: 헤더/푸터 없이 독립적인 화면 구성 */}
+        <Route path="/payment/success" element={<PaymentSuccessPage />} />
+        <Route path="/payment/fail" element={<PaymentFailPage />} />
       </Routes>
     </BrowserRouter>
   );

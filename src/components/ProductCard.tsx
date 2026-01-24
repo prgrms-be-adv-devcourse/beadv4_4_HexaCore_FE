@@ -1,6 +1,8 @@
 import { useWishlistStore } from '../store/useWishlistStore';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { getBuyNowPrice } from '../api/market';
 
 interface ProductCardProps {
     id: string;
@@ -8,18 +10,51 @@ interface ProductCardProps {
     name: string;
     price: number;
     imageUrl: string;
+    sizeIds?: { [size: string]: number };
     tags?: string[];
 }
 
-export const ProductCard = ({ id, brand, name, price, imageUrl, tags }: ProductCardProps) => {
+export const ProductCard = ({ id, brand, name, price, imageUrl, sizeIds, tags }: ProductCardProps) => {
     const { toggleWishlist, wishlistIds } = useWishlistStore();
     const isLiked = wishlistIds.includes(id);
+    const [liveBuyNowPrice, setLiveBuyNowPrice] = useState<number | null>(null);
+
+    useEffect(() => {
+        const fetchLowestBuyNowPrice = async () => {
+            if (!sizeIds) return;
+
+            try {
+                const sIds = Object.values(sizeIds);
+                const results = await Promise.all(
+                    sIds.map(async (sId) => {
+                        try {
+                            const res = await getBuyNowPrice(sId).catch(() => ({ data: null }));
+                            return res?.data?.buyNowPrice || null;
+                        } catch {
+                            return null;
+                        }
+                    })
+                );
+
+                const validPrices = results.filter((p): p is number => p !== null);
+                if (validPrices.length > 0) {
+                    setLiveBuyNowPrice(Math.min(...validPrices));
+                }
+            } catch (error) {
+                console.error("Failed to fetch card buyNow price:", error);
+            }
+        };
+
+        fetchLowestBuyNowPrice();
+    }, [sizeIds]);
 
     const handleToggleLike = (e: React.MouseEvent) => {
         e.preventDefault(); // Prevent Link navigation
         e.stopPropagation(); // Prevent bubbling
         toggleWishlist(id);
     };
+
+    const displayPrice = liveBuyNowPrice;
 
     return (
         <Link to={`/products/${id}`} className="block w-[250px] no-underline text-inherit mx-auto group">
@@ -57,7 +92,9 @@ export const ProductCard = ({ id, brand, name, price, imageUrl, tags }: ProductC
                     )}
                     <div className="mt-auto flex flex-row items-center gap-2.5 font-pretendard">
                         <span className="text-[14px] text-[#888] tracking-tight">즉시 구매가</span>
-                        <span className="text-[16.5px] font-bold text-[#333]">{price.toLocaleString()}원</span>
+                        <span className="text-[16.5px] font-bold text-[#333]">
+                            {displayPrice !== null ? `${displayPrice.toLocaleString()}원` : ' - '}
+                        </span>
                     </div>
                 </div>
             </div>
