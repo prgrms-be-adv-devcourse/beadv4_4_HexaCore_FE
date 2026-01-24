@@ -227,7 +227,7 @@ export const Community = () => {
         </div>
 
         {selectedBrand && (
-          <div className="fixed right-0 top-0 h-full w-full max-w-[400px] bg-white border-l border-gray-200 flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.08)] z-50">
+          <div className="fixed right-0 top-[120px] h-[calc(100vh-120px)] w-full max-w-[400px] bg-white border-l border-gray-200 flex flex-col shadow-[-4px_0_24px_rgba(0,0,0,0.08)] z-50">
             <div className="flex items-center justify-between p-5 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg overflow-hidden">

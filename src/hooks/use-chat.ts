@@ -7,7 +7,7 @@ import {
   type IStompSocket,
   type StompSubscription,
 } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
+import SockJS from "sockjs-client/dist/sockjs";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/";
 
