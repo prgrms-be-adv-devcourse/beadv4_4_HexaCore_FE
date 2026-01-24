@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.2.1",
+    "@tosspayments/payment-sdk": "^1.9.2",
     "axios": "^1.13.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.562.0",
