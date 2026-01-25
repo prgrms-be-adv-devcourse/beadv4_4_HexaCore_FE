@@ -95,8 +95,8 @@ export const CheckoutPage = () => {
                     amount: data.pgRequiredAmount,
                     orderId: data.tossOrderId,
                     orderName: `${product.productInfo.name} (${size}) ${isBid ? '입찰' : '구매'}`,
-                    successUrl: window.location.origin + '/payment/success',
-                    failUrl: window.location.origin + '/payment/fail',
+                    successUrl: `${window.location.origin}/payment/success?isBid=${isBid}&type=${type}`,
+                    failUrl: `${window.location.origin}/payment/fail?isBid=${isBid}&type=${type}`,
                     customerEmail: data.customerEmail || '',
                     customerName: data.customerName || '고객',
                 });

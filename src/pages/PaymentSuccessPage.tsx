@@ -61,9 +61,15 @@ export const PaymentSuccessPage = () => {
                                 <CheckCircle size={48} className="text-green-500" />
                             </div>
                         </div>
-                        <h1 className="text-2xl font-black text-gray-900">결제가 완료되었습니다!</h1>
+                        <h1 className="text-2xl font-black text-gray-900">
+                            {searchParams.get('isBid') === 'true' ? '입찰이 등록되었습니다!' : '결제가 완료되었습니다!'}
+                        </h1>
                         <p className="text-gray-400 font-medium leading-relaxed">
-                            구매 입찰 등록이 성공적으로 완료되었습니다.<br />
+                            {searchParams.get('isBid') === 'true'
+                                ? `${searchParams.get('type') || '구매'} 입찰 등록이 성공적으로 완료되었습니다.`
+                                : `${searchParams.get('type') || '구매'}가 성공적으로 완료되었습니다.`
+                            }
+                            <br />
                             3초 후 마이페이지로 이동합니다.
                         </p>
                         <button
