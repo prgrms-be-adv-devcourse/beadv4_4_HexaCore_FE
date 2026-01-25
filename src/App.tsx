@@ -18,12 +18,15 @@ import { AdminSettlement } from './pages/admin/AdminSettlement';
 import { SettlementList } from './pages/SettlementList';
 import { SettlementDetail } from './pages/SettlementDetail';
 
+import { useFcm } from './hooks/useFcm';
+
 function App() {
+  useFcm();
   return (
-      <BrowserRouter>
-        <Routes>
-          {/* 소셜 로그인 Callback 라우트 */}
-          <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+    <BrowserRouter>
+      <Routes>
+        {/* 소셜 로그인 Callback 라우트 */}
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
 
         {/* 메인 레이아웃 적용 라우트 */}
         <Route element={<MainLayout />}>
