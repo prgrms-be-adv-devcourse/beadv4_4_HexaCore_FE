@@ -1,36 +1,34 @@
-export interface ProductInfoResponse {
-    productInfoId: number;
-    name: string;
-    brandName: string;
-    categoryName: string;
-    imageUrl: string;
-    modelNumber: string;
-    releasePrice: number;
-    releaseDate: string;
-    products: ProductResponse[]; // Array of product variants
-    productOptionValues: ProductOptionValueResponse[];
-    productImages: ProductImageResponse[];
-}
-
-export interface ProductOptionValueResponse {
+// 상품 개별 옵션 정보
+export interface ProductOption {
     productOptionValueId: number;
-    productOptionId: number;
-    productOptionName: string; // 예: "색상" 또는 "사이즈"
-    value: string; // 예: "Red" 또는 "270"
+    groupName: string;
+    value: string;
 }
 
-export interface ProductImageResponse {
-    productImageId: number;
-    productInfoId: number;
-    url: string;
-    sortOrder: number;
-}
-
+// 상품 사이즈별 정보 (개별 재고, 옵션, 이미지 등)
 export interface ProductResponse {
     productId: number;
+    inventory: number;
+    options: ProductOption[];
+    imageUrls: string[];
+}
+
+// 상품 공통 상세 정보 (백엔드 ProductInfoDto.java와 일치)
+export interface ProductInfoDto {
     productInfoId: number;
-    size: string; // 실제 Product의 사이즈 (예: "270")
-    // 기타 Product 관련 정보 (예: 재고 등, API 명세에 따라 추가)
+    brand: BrandResponse; // 백엔드 ProductInfoDto.java의 brand 필드
+    category: CategoryResponse; // 백엔드 ProductInfoDto.java의 category 필드
+    name: string; // 백엔드 ProductInfoDto.java의 name 필드
+    code: string; // 백엔드 ProductInfoDto.java의 code 필드 (프론트엔드 modelNumber에 해당)
+    releasePrice: number;
+    releaseDate: string;
+    // 백엔드 ProductInfoDto.java에는 이미지 관련 필드가 없음
+}
+
+// 상품 상세 페이지 전체 API 응답 DTO (백엔드 ProductResponseDto와 일치)
+export interface ProductDetailResponse {
+    productInfo: ProductInfoDto;
+    products: ProductResponse[];
 }
 
 export interface ProductListResponse {

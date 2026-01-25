@@ -4,16 +4,29 @@ import { useWishlistStore } from '../store/useWishlistStore';
 import { useCartStore } from '../store/cartStore';
 import { getProductDetail } from '../api/product';
 import { getBuyNowPrice, getSellNowPrice } from '../api/market';
-import { Heart, Truck, CheckCircle, Share2, Info, ChevronLeft, ChevronRight, ShoppingCart, X, Loader2, AlertCircle } from 'lucide-react';
-import type { ProductInfoResponse, ProductResponse } from '../types/product';
+import {
+    Heart,
+    Share2,
+    ChevronLeft,
+    ChevronRight,
+    X,
+    Loader2,
+    AlertCircle,
+    CheckCircle
+} from 'lucide-react';
+import type { ProductDetailResponse, ProductResponse, ProductOption } from '../types/product';
 
-const SIZE_OPTIONS = ["230", "240", "250", "260", "270", "280", "290"];
+// 사이즈 값 추출 헬퍼 함수
+const getSizeFromOptions = (options: ProductOption[]): string => {
+    const sizeOption = options.find(opt => opt.groupName === '사이즈');
+    return sizeOption?.value || 'N/A';
+};
 
 export const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [product, setProduct] = useState<ProductInfoResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -24,10 +37,14 @@ export const ProductDetailPage = () => {
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [showToast, setShowToast] = useState(false);
 
-    const [allPrices, setAllPrices] = useState<{ [size: string]: { buyNow: number | null, sellNow: number | null } }>({});
+    const [allPrices, setAllPrices] = useState<{
+        [size: string]: { buyNow: number | null, sellNow: number | null }
+    }>({});
     const [modalMode, setModalMode] = useState<'buy' | 'sell' | null>(null);
 
-    const images = product?.productImages?.map(img => img.url) || [];
+    const placeholderImage = "https://via.placeholder.com/600x600?text=No+Image";
+    const images = product?.products?.[0]?.imageUrls || [];
+    const mainImage = images[currentIndex] || placeholderImage;
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -39,7 +56,9 @@ export const ProductDetailPage = () => {
             try {
                 const data = await getProductDetail(Number(id));
                 setProduct(data);
-                fetchPricesForAllSizes(data.products);
+                if (data.products) {
+                    fetchPricesForAllSizes(data.products);
+                }
             } catch (err) {
                 setError("상품 정보를 불러오는 데 실패했습니다.");
                 console.error(err);
@@ -52,29 +71,33 @@ export const ProductDetailPage = () => {
     }, [id]);
 
     const fetchPricesForAllSizes = async (products: ProductResponse[]) => {
-        if (!products) return;
-
         try {
             const pricePromises = products.map(async (p) => {
+                const size = getSizeFromOptions(p.options);
+                if (size === 'N/A') return null;
+
                 try {
                     const [buyRes, sellRes] = await Promise.all([
                         getBuyNowPrice(p.productId).catch(() => ({ data: null })),
                         getSellNowPrice(p.productId).catch(() => ({ data: null }))
                     ]);
                     return {
-                        size: p.size,
+                        size,
                         buyNow: buyRes?.data?.buyNowPrice || null,
                         sellNow: sellRes?.data?.sellNowPrice || null
                     };
                 } catch {
-                    return { size: p.size, buyNow: null, sellNow: null };
+                    return { size, buyNow: null, sellNow: null };
                 }
             });
 
             const results = await Promise.all(pricePromises);
-            const priceMap: { [size: string]: { buyNow: number | null, sellNow: number | null } } = {};
+            const priceMap: {
+                [size: string]: { buyNow: number | null, sellNow: number | null }
+            } = {};
+
             results.forEach(res => {
-                priceMap[res.size] = { buyNow: res.buyNow, sellNow: res.sellNow };
+                if (res) priceMap[res.size] = { buyNow: res.buyNow, sellNow: res.sellNow };
             });
             setAllPrices(priceMap);
         } catch (error) {
@@ -82,15 +105,18 @@ export const ProductDetailPage = () => {
         }
     };
 
-
     const handleNext = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setCurrentIndex((prev) => (prev + 1) % images.length);
+        if (images.length > 0) {
+            setCurrentIndex((prev) => (prev + 1) % images.length);
+        }
     };
 
     const handlePrev = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+        if (images.length > 0) {
+            setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+        }
     };
 
     const isWishlisted = id ? wishlistIds.includes(id) : false;
@@ -99,25 +125,20 @@ export const ProductDetailPage = () => {
         if (id) toggleWishlist(id);
     };
 
-    const handleAddToCart = () => {
-        if (!selectedSize) {
-            setModalMode('buy');
-            return;
-        }
-        executeAddToCart(selectedSize);
-    };
-
     const executeAddToCart = (size: string) => {
-        if (product) {
+        if (product && product.productInfo) {
+            const selectedProductVariant = product.products.find(p => getSizeFromOptions(p.options) === size);
+            if (!selectedProductVariant) return;
+
             const sizePrice = allPrices[size];
-            const price = (modalMode === 'sell' ? sizePrice?.sellNow : sizePrice?.buyNow) || product.releasePrice;
+            const price = (modalMode === 'sell' ? sizePrice?.sellNow : sizePrice?.buyNow) || product.productInfo.releasePrice;
 
             addItem({
-                id: `${product.productInfoId}-${size}`,
-                brand: product.brandName,
-                name: product.name,
+                id: `${product.productInfo.productInfoId}-${size}`,
+                brand: product.productInfo.brand.name,
+                name: product.productInfo.name,
                 price: price,
-                imageUrl: product.imageUrl,
+                imageUrl: selectedProductVariant.imageUrls?.[0] || placeholderImage,
                 size: size
             });
             setShowToast(true);
@@ -134,8 +155,8 @@ export const ProductDetailPage = () => {
             </div>
         );
     }
-    
-    if (error || !product) {
+
+    if (error || !product || !product.productInfo) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] font-pretendard">
                 <div className="text-center p-12 bg-white rounded-3xl border border-solid border-gray-100 shadow-sm">
@@ -147,28 +168,43 @@ export const ProductDetailPage = () => {
         );
     }
 
-    const validBuyPrices = Object.values(allPrices).map(p => p.buyNow).filter((p): p is number => p !== null);
+    const { productInfo } = product;
+
+    const availableSizes = product.products
+        .map(p => getSizeFromOptions(p.options))
+        .filter(s => s !== 'N/A')
+        .sort((a, b) => {
+            const aNum = Number(a);
+            const bNum = Number(b);
+            if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+            if (!isNaN(aNum)) return -1;
+            if (!isNaN(bNum)) return 1;
+            return a.localeCompare(b);
+        });
+
+    const validBuyPrices = Object.values(allPrices)
+        .map(p => p.buyNow)
+        .filter((p): p is number => p !== null);
+
     const representativePrice = validBuyPrices.length > 0 ? Math.min(...validBuyPrices) : null;
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pt-[100px] pb-32 px-6 lg:px-10 font-pretendard">
             <div className="max-w-[1200px] mx-auto">
                 <div className="flex flex-col lg:flex-row gap-12 lg:gap-20 items-start">
+                    {/* Left: Image */}
                     <div className="w-full lg:flex-1 lg:sticky lg:top-[120px]">
                         <div className="relative aspect-square bg-white rounded-3xl overflow-hidden border border-solid border-gray-100 shadow-[0_4px_30px_rgba(0,0,0,0.03)] group">
-                            <div className="w-full h-full flex items-center justify-center p-12 lg:p-20 bg-[#F9F9F9]">
+                            <div className="w-full h-full flex items-center justify-center p-4 lg:p-20 bg-[#F9F9F9]">
                                 <img
-                                    src={images[currentIndex] || product.imageUrl}
-                                    alt={product.name}
+                                    src={mainImage}
+                                    alt={productInfo.name}
                                     className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105 mix-blend-multiply"
                                 />
                             </div>
 
                             {images.length > 1 && (
                                 <>
-                                    <div className="absolute top-6 right-6 px-3 py-1.5 bg-black/50 backdrop-blur-md rounded-full text-white text-[10px] font-bold tracking-widest z-30 transition-opacity group-hover:bg-black/70">
-                                        {currentIndex + 1} / {images.length}
-                                    </div>
                                     <button
                                         onClick={handlePrev}
                                         className="absolute left-4 top-1/2 -translate-y-1/2 p-2.5 bg-white/80 backdrop-blur-md rounded-full text-[#333] opacity-0 group-hover:opacity-100 transition-all hover:bg-white shadow-lg active:scale-90 z-40"
@@ -183,16 +219,6 @@ export const ProductDetailPage = () => {
                                     >
                                         <ChevronRight size={20} />
                                     </button>
-                                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
-                                        {images.map((_, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setCurrentIndex(idx)}
-                                                className={`h-1.5 rounded-full transition-all duration-300 ${currentIndex === idx ? 'bg-accent w-6' : 'bg-gray-300 w-1.5'}`}
-                                                aria-label={`Go to image ${idx + 1}`}
-                                            />
-                                        ))}
-                                    </div>
                                 </>
                             )}
                             <button className="absolute top-6 left-6 p-3 bg-white/80 backdrop-blur-md rounded-full text-gray-400 hover:text-accent transition-colors z-20">
@@ -201,33 +227,41 @@ export const ProductDetailPage = () => {
                         </div>
                     </div>
 
+                    {/* Right: Details */}
                     <div className="w-full lg:flex-1 flex flex-col pt-4">
                         <div className="mb-10">
-                            <Link to={`/shop?brand=${product.brandName}`} className="inline-block text-lg font-black text-[#333] border-b-2 border-solid border-[#333] mb-4 hover:opacity-70 transition-opacity">
-                                {product.brandName}
+                            <Link
+                                to={`/shop?brand=${productInfo.brand.brandId}`}
+                                className="inline-block text-lg font-black text-[#333] border-b-2 border-solid border-[#333] mb-4 hover:opacity-70 transition-opacity"
+                            >
+                                {productInfo.brand.name}
                             </Link>
                             <h1 className="text-2xl lg:text-3xl font-medium text-[#333] mb-8 leading-tight tracking-tight">
-                                {product.name}
+                                {productInfo.name}
                             </h1>
 
                             <div className="grid grid-cols-3 border-y border-gray-100 py-5 gap-4">
                                 <div className="flex flex-col gap-1 border-r border-gray-100 pr-4">
                                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">모델번호</span>
-                                    <span className="text-xs font-black text-[#333]">{product.modelNumber}</span>
+                                    <span className="text-xs font-black text-[#333]">{productInfo.code}</span>
                                 </div>
                                 <div className="flex flex-col gap-1 border-r border-gray-100 px-4">
                                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">발매일</span>
-                                    <span className="text-xs font-black text-[#333]">{product.releaseDate}</span>
+                                    <span className="text-xs font-black text-[#333]">
+                    {new Date(productInfo.releaseDate).toLocaleDateString("ko-KR")}
+                  </span>
                                 </div>
                                 <div className="flex flex-col gap-1 pl-4">
                                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-tight">발매가</span>
-                                    <span className="text-xs font-black text-[#333]">{product.releasePrice.toLocaleString()}원</span>
+                                    <span className="text-xs font-black text-[#333]">
+                    {productInfo.releasePrice.toLocaleString()}원
+                  </span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="bg-white rounded-2xl p-8 border border-solid border-gray-100 shadow-sm mb-8">
-                             <div className="flex flex-col mb-8 gap-0.5">
+                            <div className="flex flex-col mb-8 gap-0.5">
                                 <span className="text-[12px] font-bold text-gray-400">즉시 구매가</span>
                                 <div className="flex items-end gap-1">
                                     <strong className="text-3xl font-black text-accent">
@@ -236,12 +270,6 @@ export const ProductDetailPage = () => {
                                     {representativePrice !== null && <span className="text-xl font-bold text-accent mb-1">원</span>}
                                 </div>
                             </div>
-
-                            <div className="flex items-center py-5 border-t border-gray-100 mb-2">
-                                <span className="w-20 text-[13px] text-gray-400 font-medium">배송비</span>
-                                <span className="text-[13px] font-bold text-[#333]">일반배송 무료</span>
-                            </div>
-
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <button
                                     onClick={() => setModalMode('buy')}
@@ -256,30 +284,20 @@ export const ProductDetailPage = () => {
                                     <span className="text-lg font-black tracking-tight">판매하기</span>
                                 </button>
                             </div>
-
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <button
-                                    className="w-full h-14 rounded-xl border border-solid border-gray-200 bg-white flex items-center justify-center gap-2 transition-all font-bold text-[#333] hover:border-gray-300 active:scale-[0.99]"
-                                    onClick={handleToggleWishlist}
-                                >
-                                    <Heart
-                                        size={20}
-                                        className={isWishlisted ? "text-red-500 fill-red-500" : "text-gray-300"}
-                                    />
-                                    <span>{isWishlisted ? "관심 상품" : "관심 등록"}</span>
-                                </button>
-                                <button
-                                    className="w-full h-14 rounded-xl border border-solid border-gray-200 bg-white flex items-center justify-center gap-2 transition-all font-bold text-[#333] hover:border-gray-300 active:scale-[0.99]"
-                                    onClick={handleAddToCart}
-                                >
-                                    <ShoppingCart size={20} className="text-gray-400" />
-                                    <span>장바구니 담기</span>
-                                </button>
-                            </div>
+                            <button
+                                className="w-full h-14 rounded-xl border border-solid border-gray-200 bg-white flex items-center justify-center gap-2 transition-all font-bold text-[#333] hover:border-gray-300 active:scale-[0.99]"
+                                onClick={handleToggleWishlist}
+                            >
+                                <Heart size={20} className={isWishlisted ? "text-red-500 fill-red-500" : "text-gray-300"} />
+                                <span>{isWishlisted ? "관심 상품" : "관심 등록"}</span>
+                            </button>
                         </div>
 
                         {modalMode && (
-                             <div className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => { setModalMode(null); setSelectedSize(null); }}>
+                            <div
+                                className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-300"
+                                onClick={() => { setModalMode(null); setSelectedSize(null); }}
+                            >
                                 <div
                                     className="bg-white w-full max-w-[480px] rounded-t-[32px] sm:rounded-[32px] overflow-hidden animate-in slide-in-from-bottom duration-500 shadow-2xl flex flex-col max-h-[90vh]"
                                     onClick={(e) => e.stopPropagation()}
@@ -290,64 +308,93 @@ export const ProductDetailPage = () => {
                                                 <h3 className="text-xl font-bold text-[#333]">{modalMode === 'buy' ? '구매하기' : '판매하기'}</h3>
                                                 <span className="text-[11px] text-gray-400 font-medium">(가격 단위: 원)</span>
                                             </div>
-                                            <button onClick={() => { setModalMode(null); setSelectedSize(null); }} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 -mr-2">
+                                            <button
+                                                onClick={() => { setModalMode(null); setSelectedSize(null); }}
+                                                className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 -mr-2"
+                                            >
                                                 <X size={24} />
                                             </button>
                                         </div>
                                         <div className="flex gap-4 items-center bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
                                             <div className="w-16 h-16 bg-white rounded-xl overflow-hidden p-1 flex-shrink-0 border border-gray-100">
-                                                <img src={product.imageUrl} alt="" className="w-full h-full object-contain mix-blend-multiply" />
+                                                <img src={mainImage} alt="" className="w-full h-full object-contain mix-blend-multiply" />
                                             </div>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{modalMode === 'buy' ? 'BUYING' : 'SELLING'}</span>
-                                                <span className="text-sm font-bold text-gray-900 truncate">{product.name}</span>
-                                                <span className="text-[11px] text-gray-500 truncate">{product.brandName} • {product.modelNumber}</span>
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                          {modalMode === 'buy' ? 'BUYING' : 'SELLING'}
+                        </span>
+                                                <span className="text-sm font-bold text-gray-900 truncate">{productInfo.name}</span>
+                                                <span className="text-[11px] text-gray-500 truncate">{productInfo.brand.name} • {productInfo.code}</span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="p-6 pb-2 overflow-y-auto scrollbar-hide">
                                         <div className="grid grid-cols-3 gap-3">
-                                            {SIZE_OPTIONS.map(size => {
+                                            {availableSizes.map(size => {
                                                 const sizePrice = allPrices[size];
                                                 const displayPrice = modalMode === 'buy' ? sizePrice?.buyNow : sizePrice?.sellNow;
-                                                const productVariant = product.products.find(p => p.size === size);
+                                                const productVariant = product.products.find(p => getSizeFromOptions(p.options) === size);
 
                                                 return (
                                                     <button
                                                         key={size}
                                                         onClick={() => setSelectedSize(size)}
                                                         disabled={!productVariant}
-                                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border border-solid transition-all group
-                                                            ${!productVariant ? 'bg-gray-50 cursor-not-allowed' : selectedSize === size ? 'border-gray-900 bg-white ring-2 ring-gray-900 ring-inset shadow-md' : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'}`}
+                                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border border-solid transition-all group ${
+                                                            !productVariant
+                                                                ? 'bg-gray-50 cursor-not-allowed'
+                                                                : selectedSize === size
+                                                                    ? 'border-gray-900 bg-white ring-2 ring-gray-900 ring-inset shadow-md'
+                                                                    : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                                        }`}
                                                     >
-                                                        <span className={`text-[15px] font-bold ${!productVariant ? 'text-gray-300' : selectedSize === size ? 'text-gray-900' : 'text-[#333]'}`}>
-                                                            {size}
-                                                        </span>
-                                                        <span className={`text-[10px] font-bold mt-1 
-                                                            ${!productVariant ? 'text-gray-300' : displayPrice ? (modalMode === 'buy' ? 'text-red-500' : 'text-green-600') : 'text-gray-300'}`}
-                                                        >
-                                                            {productVariant ? (displayPrice ? `${displayPrice.toLocaleString()}` : (modalMode === 'buy' ? '구매입찰' : '판매입찰')) : '-'}
-                                                        </span>
+                            <span className={`text-[15px] font-bold ${
+                                !productVariant
+                                    ? 'text-gray-300'
+                                    : selectedSize === size
+                                        ? 'text-gray-900'
+                                        : 'text-[#333]'
+                            }`}>
+                              {size}
+                            </span>
+                                                        <span className={`text-[10px] font-bold mt-1 ${
+                                                            !productVariant
+                                                                ? 'text-gray-300'
+                                                                : displayPrice
+                                                                    ? (modalMode === 'buy' ? 'text-red-500' : 'text-green-600')
+                                                                    : 'text-gray-300'
+                                                        }`}>
+                              {productVariant
+                                  ? (displayPrice ? `${displayPrice.toLocaleString()}` : (modalMode === 'buy' ? '구매입찰' : '판매입찰'))
+                                  : '-'}
+                            </span>
                                                     </button>
                                                 );
                                             })}
                                         </div>
                                     </div>
 
-                                    {/* Modal Footer: Action Buttons (Only visible when size is selected) */}
-                                    <div className={`p-6 border-t border-gray-100 transition-all duration-300 bg-white ${selectedSize ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none absolute bottom-0 left-0 right-0'}`}>
-                                        {/* ... (rest of the modal footer logic) ... */}
-                                    </div>
-                                    
-                                    {!selectedSize && (
-                                        <div className="bg-gray-50 p-6 text-center border-t border-gray-100 mt-auto">
-                                            <p className="text-xs text-gray-400 font-medium">사이즈를 선택하면 다음 단계로 진행됩니다.</p>
+                                    {selectedSize && (
+                                        <div className="p-6 border-t border-gray-100 bg-white">
+                                            <button
+                                                onClick={() => {
+                                                    const selectedProduct = product.products.find(p => getSizeFromOptions(p.options) === selectedSize);
+                                                    if (selectedProduct) {
+                                                        navigate(`/${modalMode === 'buy' ? 'purchase' : 'sales'}/${selectedProduct.productId}`);
+                                                    }
+                                                }}
+                                                className="w-full h-14 rounded-xl bg-accent text-white font-bold text-lg"
+                                            >
+                                                {allPrices[selectedSize] && (modalMode === 'buy' ? allPrices[selectedSize]?.buyNow : allPrices[selectedSize]?.sellNow)
+                                                    ? '즉시주문 계속'
+                                                    : '입찰 계속'}
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         )}
-                        
+
                         {showToast && (
                             <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[3000] bg-gray-900 text-white px-8 py-4 rounded-full shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 font-bold text-sm">
                                 <CheckCircle size={18} className="text-green-400" />
@@ -355,10 +402,6 @@ export const ProductDetailPage = () => {
                                 <Link to="/cart" className="ml-4 text-accent hover:underline">장바구니 이동</Link>
                             </div>
                         )}
-
-                        <div className="space-y-6 pt-6 border-t border-solid border-gray-100">
-                           {/* ... (rest of the page) ... */}
-                        </div>
                     </div>
                 </div>
             </div>

@@ -4,12 +4,11 @@ import type {
     CategoryResponse,
     PaginatedProductList,
     ProductFilter,
-    ProductInfoResponse,
-    ProductListResponse
+    ProductDetailResponse
 } from '../types/product';
 
 // URL 쿼리 파라미터 생성 헬퍼
-const buildUrl = (endpoint: string, params: Record<string, any>): string => {
+const buildUrl = (endpoint: string, params: Record<string, unknown>): string => {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
         // null 또는 undefined가 아닌 값만 파라미터에 추가
@@ -56,17 +55,19 @@ export const getProducts = async (filter: ProductFilter = {}): Promise<Paginated
     return response.data.data;
 };
 
-
-export const getProductDetail = async (productInfoId: number): Promise<ProductInfoResponse> => {
+// 상품 상세 조회
+export const getProductDetail = async (productInfoId: number): Promise<ProductDetailResponse> => {
     const response = await axiosInstance.get(`/api/v1/products/${productInfoId}`);
     return response.data.data;
 };
 
+// 브랜드 목록 조회
 export const getBrands = async (): Promise<BrandResponse[]> => {
     const response = await axiosInstance.get('/api/v1/products/brands');
     return response.data.data.brands;
 };
 
+// 카테고리 목록 조회
 export const getCategories = async (): Promise<CategoryResponse[]> => {
     const response = await axiosInstance.get('/api/v1/products/categories');
     return response.data.data.categories;
