@@ -17,6 +17,11 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
+        '/api/v1/notifications': {
+          target: env.VITE_BACKEND_NOTIFICATION,
+          changeOrigin: true,
+          secure: false,
+        },
         '/api': {
           target: target,
           changeOrigin: true,
