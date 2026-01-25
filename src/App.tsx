@@ -17,6 +17,8 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { AdminSettlement } from './pages/admin/AdminSettlement';
 import { SettlementList } from './pages/SettlementList';
 import { SettlementDetail } from './pages/SettlementDetail';
+import { ErrorPage } from './pages/ErrorPage';
+
 
 import { useFcm } from './hooks/useFcm';
 
@@ -44,6 +46,8 @@ function App() {
           <Route path="/mypage/settlement" element={<SettlementList />} />
           <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
           <Route path="/admin/settlement" element={<AdminSettlement />} />
+          <Route path="/error" element={<ErrorPage />} />
+          <Route path="*" element={<ErrorPage />} />
         </Route>
 
         {/* 결제 결과 페이지: 헤더/푸터 없이 독립적인 화면 구성 */}
