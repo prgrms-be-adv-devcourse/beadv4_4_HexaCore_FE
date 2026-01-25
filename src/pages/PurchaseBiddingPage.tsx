@@ -3,7 +3,13 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getProductDetail } from '../api/product';
 import { getBuyNowPrice, getSellNowPrice } from '../api/market';
 import { ChevronLeft, AlertCircle, Loader2 } from 'lucide-react';
-import type { ProductInfoResponse } from '../types/product';
+import type { ProductDetailResponse, ProductOption } from '../types/product';
+
+// 사이즈 값 추출 헬퍼 함수
+const getSizeFromOptions = (options: ProductOption[]): string => {
+    const sizeOption = options.find(opt => opt.groupName === '사이즈');
+    return sizeOption?.value || 'N/A';
+};
 
 export const PurchaseBiddingPage = () => {
     const { id } = useParams();
@@ -11,7 +17,7 @@ export const PurchaseBiddingPage = () => {
     const navigate = useNavigate();
     const size = searchParams.get('size');
 
-    const [product, setProduct] = useState<ProductInfoResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +27,7 @@ export const PurchaseBiddingPage = () => {
     const [immediateSellPrice, setImmediateSellPrice] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const productVariant = product?.products.find(p => p.size === size);
+    const productVariant = product?.products.find(p => getSizeFromOptions(p.options) === size);
     const productId = productVariant?.productId;
 
     useEffect(() => {
@@ -36,7 +42,7 @@ export const PurchaseBiddingPage = () => {
                 const productData = await getProductDetail(Number(id));
                 setProduct(productData);
 
-                const variant = productData.products.find(p => p.size === size);
+                const variant = productData.products.find(p => getSizeFromOptions(p.options) === size);
                 if (variant) {
                     const [buyRes, sellRes] = await Promise.all([
                         getBuyNowPrice(variant.productId).catch(() => null),
@@ -119,11 +125,11 @@ export const PurchaseBiddingPage = () => {
                 <div className="p-8">
                     <div className="flex gap-6 items-center p-6 bg-white rounded-2xl mb-8 border border-gray-100 shadow-sm">
                         <div className="w-24 h-24 bg-gray-50 rounded-xl overflow-hidden p-2">
-                            <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
+                            <img src={productVariant?.imageUrls[0] || product.products[0]?.imageUrls[0] || ''} alt={product.productInfo.name} className="w-full h-full object-contain mix-blend-multiply" />
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
-                            <h2 className="text-base font-bold text-gray-900 leading-tight">{product.name}</h2>
-                            <p className="text-xs text-gray-400 font-medium">{product.brandName} • {product.modelNumber}</p>
+                            <h2 className="text-base font-bold text-gray-900 leading-tight">{product.productInfo.name}</h2>
+                            <p className="text-xs text-gray-400 font-medium">{product.productInfo.brand.name} • {product.productInfo.code}</p>
                             <span className="mt-1 text-sm font-black text-gray-900">{size}</span>
                         </div>
                     </div>

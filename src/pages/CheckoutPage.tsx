@@ -4,7 +4,13 @@ import { getProductDetail } from '../api/product';
 import { registerBuyBid, registerSellBid, buyNow, sellNow } from '../api/market';
 import { ChevronRight, ChevronLeft, Info, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
-import type { ProductInfoResponse } from '../types/product';
+import type { ProductDetailResponse, ProductOption } from '../types/product';
+
+// 사이즈 값 추출 헬퍼 함수
+const getSizeFromOptions = (options: ProductOption[]): string => {
+    const sizeOption = options.find(opt => opt.groupName === '사이즈');
+    return sizeOption?.value || 'N/A';
+};
 
 const TOSS_CLIENT_KEY = 'test_ck_d46qopOB89Zv9qOnB0gL3ZmM75y0';
 
@@ -13,7 +19,7 @@ export const CheckoutPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    const [product, setProduct] = useState<ProductInfoResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +29,7 @@ export const CheckoutPage = () => {
     const isBid = searchParams.get('isBid') === 'true';
     const isSelling = type === '판매';
 
-    const productVariant = product?.products.find(p => p.size === size);
+    const productVariant = product?.products.find(p => getSizeFromOptions(p.options) === size);
     const productId = productVariant?.productId;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +59,7 @@ export const CheckoutPage = () => {
     if (isLoading) {
         return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 animate-spin" /></div>;
     }
-    
+
     if (error || !product || !size || !price) {
         return <div className="pt-32 text-center text-red-500">{error || "주문 정보를 불러올 수 없습니다."}</div>;
     }
@@ -88,7 +94,7 @@ export const CheckoutPage = () => {
                 await tossPayments.requestPayment('카드', {
                     amount: data.pgRequiredAmount,
                     orderId: data.tossOrderId,
-                    orderName: `${product.name} (${size}) ${isBid ? '입찰' : '구매'}`,
+                    orderName: `${product.productInfo.name} (${size}) ${isBid ? '입찰' : '구매'}`,
                     successUrl: window.location.origin + '/payment/success',
                     failUrl: window.location.origin + '/payment/fail',
                     customerEmail: data.customerEmail || '',
@@ -137,10 +143,10 @@ export const CheckoutPage = () => {
                         <h3 className="text-base font-black text-gray-900 mb-6">상품 정보</h3>
                         <div className="flex gap-4 p-4 bg-gray-50/50 rounded-2xl">
                             <div className="w-16 h-16 bg-white border border-gray-100 rounded-xl overflow-hidden p-2">
-                                <img src={product.imageUrl} alt="" className="w-full h-full object-contain mix-blend-multiply" />
+                                <img src={productVariant?.imageUrls[0] || product.products[0]?.imageUrls[0] || ''} alt="" className="w-full h-full object-contain mix-blend-multiply" />
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
-                                <h4 className="text-sm font-bold text-gray-900 truncate mb-0.5">{product.name}</h4>
+                                <h4 className="text-sm font-bold text-gray-900 truncate mb-0.5">{product.productInfo.name}</h4>
                                 <div className="flex justify-between items-end mt-auto">
                                     <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded-sm uppercase">{size} / {isBid ? '입찰' : '즉시'}</span>
                                     <span className="text-base font-black text-gray-900">{itemPrice.toLocaleString()}원</span>
