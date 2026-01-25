@@ -1,42 +1,66 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { SHOP_PRODUCTS } from '../data/mockData';
+import { getProductDetail } from '../api/product';
 import { getBuyNowPrice, getSellNowPrice } from '../api/market';
-import { ChevronLeft, AlertCircle } from 'lucide-react';
-
+import { ChevronLeft, AlertCircle, Loader2 } from 'lucide-react';
+import type { ProductInfoResponse } from '../types/product';
 
 export const PurchaseBiddingPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const size = searchParams.get('size');
-    const product = SHOP_PRODUCTS.find(p => p.id === id);
-    const sizeId = product?.sizeIds?.[size || ''];
+
+    const [product, setProduct] = useState<ProductInfoResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const [mode, setMode] = useState<'bid' | 'buy'>('bid');
     const [bidPrice, setBidPrice] = useState<string>('');
     const [immediatePrice, setImmediatePrice] = useState<number | null>(null);
     const [immediateSellPrice, setImmediateSellPrice] = useState<number | null>(null);
-    const [isSubmitting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const productVariant = product?.products.find(p => p.size === size);
+    const productId = productVariant?.productId;
 
     useEffect(() => {
-        if (sizeId) {
-            // 즉시 구매가 조회
-            getBuyNowPrice(Number(sizeId)).then(res => {
-                const price = res?.data?.buyNowPrice || null;
-                setImmediatePrice(price);
-                if (price) setMode('buy');
-            });
-            // 즉시 판매가 조회
-            getSellNowPrice(Number(sizeId)).then(res => {
-                setImmediateSellPrice(res?.data?.sellNowPrice || null);
-            });
-        }
-    }, [sizeId]);
+        const fetchDetails = async () => {
+            if (!id) {
+                setError("상품 ID가 없습니다.");
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true);
+            try {
+                const productData = await getProductDetail(Number(id));
+                setProduct(productData);
 
-    if (!product || !size) {
-        return <div className="pt-32 text-center">상품 정보를 찾을 수 없습니다.</div>;
-    }
+                const variant = productData.products.find(p => p.size === size);
+                if (variant) {
+                    const [buyRes, sellRes] = await Promise.all([
+                        getBuyNowPrice(variant.productId).catch(() => null),
+                        getSellNowPrice(variant.productId).catch(() => null)
+                    ]);
+
+                    const buyNowPrice = buyRes?.data?.buyNowPrice || null;
+                    setImmediatePrice(buyNowPrice);
+                    if (buyNowPrice) {
+                        setMode('buy');
+                    }
+                    setImmediateSellPrice(sellRes?.data?.sellNowPrice || null);
+                }
+
+            } catch (err) {
+                setError("상품 정보를 불러오는 데 실패했습니다.");
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchDetails();
+    }, [id, size]);
 
     const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -44,37 +68,46 @@ export const PurchaseBiddingPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!sizeId) {
-            alert('상품 옵션 정보(sizeId)가 올바르지 않습니다.');
+        if (!productId) {
+            alert('상품 옵션 정보(productId)가 올바르지 않습니다.');
             return;
         }
 
+        setIsSubmitting(true);
         const finalPrice = mode === 'buy' ? immediatePrice : parseInt(bidPrice);
 
-        if (!finalPrice) {
+        if (!finalPrice || finalPrice <= 0) {
             alert('금액을 확인해 주세요.');
+            setIsSubmitting(false);
             return;
         }
 
         if (mode === 'bid' && finalPrice % 1000 !== 0) {
             alert('입찰가는 1,000원 단위로 입력해 주세요.');
+            setIsSubmitting(false);
             return;
         }
 
         const isBid = mode === 'bid';
         navigate(`/checkout/${id}?size=${size}&price=${finalPrice}&type=구매&isBid=${isBid}`);
+        setIsSubmitting(false);
     };
+
+    if (isLoading) {
+        return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 animate-spin" /></div>;
+    }
+
+    if (error || !product || !size) {
+        return <div className="pt-32 text-center text-red-500">{error || "상품 정보를 찾을 수 없습니다."}</div>;
+    }
 
     const parsedPrice = bidPrice ? parseInt(bidPrice) : 0;
     const displayPrice = mode === 'buy' ? (immediatePrice || 0) : parsedPrice;
-    const deliveryFee = 0;
-    const inspectionFee = 0;
-    const totalAmount = displayPrice + deliveryFee + inspectionFee;
+    const totalAmount = displayPrice; // Fees are calculated on the next page
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pt-[80px] pb-20 px-4 font-pretendard">
             <div className="max-w-[780px] mx-auto bg-white border border-gray-100 shadow-sm rounded-3xl overflow-hidden mt-8">
-                {/* Header */}
                 <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
                     <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-400 hover:text-gray-900 transition-colors">
                         <ChevronLeft size={24} />
@@ -84,19 +117,17 @@ export const PurchaseBiddingPage = () => {
                 </div>
 
                 <div className="p-8">
-                    {/* Product Summary */}
                     <div className="flex gap-6 items-center p-6 bg-white rounded-2xl mb-8 border border-gray-100 shadow-sm">
                         <div className="w-24 h-24 bg-gray-50 rounded-xl overflow-hidden p-2">
                             <img src={product.imageUrl} alt={product.name} className="w-full h-full object-contain mix-blend-multiply" />
                         </div>
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
                             <h2 className="text-base font-bold text-gray-900 leading-tight">{product.name}</h2>
-                            <p className="text-xs text-gray-400 font-medium">{product.brand} • {product.code}</p>
+                            <p className="text-xs text-gray-400 font-medium">{product.brandName} • {product.modelNumber}</p>
                             <span className="mt-1 text-sm font-black text-gray-900">{size}</span>
                         </div>
                     </div>
 
-                    {/* Top Price Info */}
                     <div className="flex gap-px bg-gray-100 border border-gray-100 rounded-2xl overflow-hidden mb-8">
                         <div className="bg-white flex-1 flex flex-col items-center py-6 border-r border-gray-100">
                             <span className="text-[11px] font-bold text-gray-400 mb-1">즉시 구매가</span>
@@ -112,7 +143,6 @@ export const PurchaseBiddingPage = () => {
                         </div>
                     </div>
 
-                    {/* Tabs */}
                     <div className="flex bg-gray-100 p-1 rounded-2xl mb-10">
                         <button
                             onClick={() => setMode('bid')}
@@ -129,18 +159,17 @@ export const PurchaseBiddingPage = () => {
                         </button>
                     </div>
 
-                    {/* Mode Content */}
                     <div className="mb-10 min-h-[140px]">
                         {mode === 'bid' ? (
                             <div className="space-y-4 animate-in fade-in duration-300">
                                 <label className="text-sm font-bold text-gray-900 flex justify-between items-center ml-1">
                                     <span>구매 희망가</span>
-                                    <span className="text-[11px] text-gray-400 font-medium">최근 거래가: 330,000원</span>
+                                    <span className="text-[11px] text-gray-400 font-medium">최근 거래가: -</span>
                                 </label>
                                 <div className="relative group">
                                     <input
                                         type="text"
-                                        value={bidPrice ? parsedPrice.toLocaleString() : ''}
+                                        value={bidPrice ? parseInt(bidPrice).toLocaleString() : ''}
                                         onChange={handlePriceChange}
                                         placeholder="희망가 입력"
                                         className="w-full h-16 pr-14 pl-6 text-xl font-black text-right border-b-2 border-gray-100 focus:border-gray-900 outline-none transition-all placeholder:text-gray-200"
@@ -168,7 +197,6 @@ export const PurchaseBiddingPage = () => {
                         )}
                     </div>
 
-                    {/* Cost Summary */}
                     <div className="space-y-4 pt-8 border-t border-gray-100 mb-12">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-gray-400 font-medium">총 결제금액</span>
@@ -182,7 +210,6 @@ export const PurchaseBiddingPage = () => {
                         </div>
                     </div>
 
-                    {/* Submit Button */}
                     <button
                         onClick={handleSubmit}
                         disabled={(mode === 'bid' && !bidPrice) || (mode === 'buy' && !immediatePrice) || isSubmitting}
@@ -191,7 +218,7 @@ export const PurchaseBiddingPage = () => {
                                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-[#222] text-white hover:bg-[#333]'}`}
                     >
-                        {isSubmitting ? '처리 중...' : (mode === 'buy' ? '즉시 구매 계속' : '구매 입찰 등록')}
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : (mode === 'buy' ? '즉시 구매 계속' : '구매 입찰 등록')}
                     </button>
                 </div>
             </div>

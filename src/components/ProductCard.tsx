@@ -6,9 +6,8 @@ interface ProductCardProps {
     id: string;
     brand: string;
     name: string;
-    price: number;
+    price: number | null;
     imageUrl: string;
-    sizeIds?: { [size: string]: number };
 }
 
 export const ProductCard = ({ id, brand, name, price, imageUrl }: ProductCardProps) => {
@@ -20,8 +19,6 @@ export const ProductCard = ({ id, brand, name, price, imageUrl }: ProductCardPro
         e.stopPropagation(); // Prevent bubbling
         toggleWishlist(id);
     };
-
-    const displayPrice = price;
 
     return (
         <Link to={`/products/${id}`} className="block w-[250px] no-underline text-inherit mx-auto group">
@@ -51,7 +48,7 @@ export const ProductCard = ({ id, brand, name, price, imageUrl }: ProductCardPro
                     <div className="mt-auto flex flex-col font-pretendard">
                         <span className="text-[13px] text-[#888] mb-0.5">즉시 구매가</span>
                         <span className="text-[16.5px] font-bold text-[#333]">
-                            {displayPrice !== null ? `${displayPrice.toLocaleString()}원` : `${price.toLocaleString()}원`}
+                            {price !== null ? `${price.toLocaleString()}원` : '입찰 문의'}
                         </span>
                     </div>
                 </div>

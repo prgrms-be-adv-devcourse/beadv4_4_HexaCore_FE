@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { SHOP_PRODUCTS } from '../data/mockData';
+import { getProductDetail } from '../api/product';
 import { registerBuyBid, registerSellBid, buyNow, sellNow } from '../api/market';
-import { ChevronRight, ChevronLeft, Info, Building2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Info, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
+import type { ProductInfoResponse } from '../types/product';
 
 const TOSS_CLIENT_KEY = 'test_ck_d46qopOB89Zv9qOnB0gL3ZmM75y0';
 
@@ -12,20 +13,49 @@ export const CheckoutPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
+    const [product, setProduct] = useState<ProductInfoResponse | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
     const size = searchParams.get('size');
     const price = searchParams.get('price');
     const type = searchParams.get('type') || '구매'; // '구매' 또는 '판매'
     const isBid = searchParams.get('isBid') === 'true';
     const isSelling = type === '판매';
 
-    const product = SHOP_PRODUCTS.find(p => p.id === id);
-    const sizeId = product?.sizeIds?.[size || ''];
+    const productVariant = product?.products.find(p => p.size === size);
+    const productId = productVariant?.productId;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    useEffect(() => {
+        if (!id) {
+            setError("상품 ID가 없습니다.");
+            setIsLoading(false);
+            return;
+        }
+        const fetchProduct = async () => {
+            setIsLoading(true);
+            try {
+                const data = await getProductDetail(Number(id));
+                setProduct(data);
+            } catch (err) {
+                setError("상품 정보를 불러오는 데 실패했습니다.");
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProduct();
+    }, [id]);
 
-    if (!product || !size || !sizeId) {
-        return <div className="pt-32 text-center font-pretendard">주문 정보를 불러올 수 없습니다.</div>;
+
+    if (isLoading) {
+        return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-10 h-10 animate-spin" /></div>;
+    }
+    
+    if (error || !product || !size || !price) {
+        return <div className="pt-32 text-center text-red-500">{error || "주문 정보를 불러올 수 없습니다."}</div>;
     }
 
     const itemPrice = parseInt(price || '0');
@@ -33,6 +63,11 @@ export const CheckoutPage = () => {
     const finalAmount = isSelling ? itemPrice : itemPrice + deliveryFee;
 
     const handleFinalAction = async () => {
+        if (!productId) {
+            alert('상품 옵션 정보(productId)가 올바르지 않습니다.');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             let apiCall;
@@ -42,7 +77,7 @@ export const CheckoutPage = () => {
                 apiCall = isBid ? registerBuyBid : buyNow;
             }
 
-            const res = await apiCall(Number(sizeId), itemPrice, size);
+            const res = await apiCall(Number(productId), itemPrice, size);
             const data = res.data;
 
             if (data.status === 'PAID' || isSelling) {
@@ -114,7 +149,6 @@ export const CheckoutPage = () => {
                         </div>
                     </section>
 
-                    {/* Bidding Specific Info if needed */}
                     {isBid && !isSelling && (
                         <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 italic">
                             <div className="flex items-start gap-3 text-gray-500">
@@ -149,7 +183,6 @@ export const CheckoutPage = () => {
                         </section>
                     )}
 
-                    {/* Final Summary */}
                     <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         <h3 className="text-base font-black text-gray-900 mb-6">{isBid ? '입찰 확인' : '최종 확인'}</h3>
                         <div className="space-y-4 mb-8">
