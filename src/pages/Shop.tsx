@@ -74,11 +74,11 @@ export const Shop = () => {
     useEffect(() => {
         const filters = {
             page,
-            keyword: searchKeyword,
             brandId: activeBrandId,
             categoryId: activeCategoryId
         };
-        debouncedFetch(filters);
+        // Trigger fetch only for page, brand, and category changes
+        fetchProducts(filters);
 
         const newSearchParams = new URLSearchParams();
         if (searchKeyword) newSearchParams.set('keyword', searchKeyword);
@@ -86,7 +86,7 @@ export const Shop = () => {
         if (activeCategoryId) newSearchParams.set('category', String(activeCategoryId));
         setSearchParams(newSearchParams);
 
-    }, [page, searchKeyword, activeBrandId, activeCategoryId, debouncedFetch, setSearchParams]);
+    }, [page, activeBrandId, activeCategoryId, fetchProducts, setSearchParams]);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -124,7 +124,6 @@ export const Shop = () => {
                         value={searchKeyword}
                         onChange={(e) => {
                             setSearchKeyword(e.target.value);
-                            setPage(0);
                         }}
                     />
                 </form>
