@@ -1,5 +1,5 @@
 // Settlement API 서비스
-
+import axiosInstance from '../api/axios';
 import type {
     Settlement,
     SettlementItem,
@@ -10,39 +10,6 @@ import type {
     SettlementFilter,
     SettlementItemFilter,
 } from '../types/settlement';
-
-const API_BASE_URL = import.meta.env.VITE_BACKEND_SETTLEMENT || 'http://localhost:8086';
-
-// CommonResponse 타입
-interface CommonResponse<T> {
-    status: number;
-    data: T;
-    message?: string;
-}
-
-// API 요청 헬퍼
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const token = localStorage.getItem('accessToken');
-
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-            ...options.headers,
-        },
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
-
-    const result: CommonResponse<T> = await response.json();
-    return result.data;
-}
 
 // URL에 쿼리 파라미터 추가 헬퍼
 function buildUrl(endpoint: string, params?: Record<string, string | number | undefined>): string {
@@ -64,7 +31,8 @@ function buildUrl(endpoint: string, params?: Record<string, string | number | un
 export const adminSettlementService = {
     // 대시보드 조회
     getDashboard: async (): Promise<SettlementDashboard> => {
-        return request<SettlementDashboard>('/api/v1/admin/settlements/dashboard');
+        const response = await axiosInstance.get('/api/v1/admin/settlements/dashboard');
+        return response.data.data;
     },
 
     // 정산 목록 조회 (필터, 페이지네이션)
@@ -77,45 +45,32 @@ export const adminSettlementService = {
             page: filter.page,
             size: filter.size,
         });
-        return request<PageResponse<Settlement>>(url);
+        const response = await axiosInstance.get(url);
+        return response.data.data;
     },
 
     // 정산 상세 조회
     getSettlement: async (settlementId: number): Promise<Settlement> => {
-        return request<Settlement>(`/api/v1/admin/settlements/${settlementId}`);
+        const response = await axiosInstance.get(`/api/v1/admin/settlements/${settlementId}`);
+        return response.data.data;
     },
 
     // 특정 정산의 로그 조회
     getSettlementLogs: async (settlementId: number): Promise<SettlementLog[]> => {
-        return request<SettlementLog[]>(`/api/v1/admin/settlements/${settlementId}/logs`);
+        const response = await axiosInstance.get(`/api/v1/admin/settlements/${settlementId}/logs`);
+        return response.data.data;
     },
 
     // 전체 로그 조회
     getAllLogs: async (): Promise<SettlementLog[]> => {
-        return request<SettlementLog[]>('/api/v1/admin/settlements/logs');
+        const response = await axiosInstance.get('/api/v1/admin/settlements/logs');
+        return response.data.data;
     },
 
     // 배치 실행
     runBatch: async (targetMonth: string): Promise<BatchExecutionResponse> => {
-        const url = `${API_BASE_URL}/api/v1/admin/settlements/batch/run?targetMonth=${targetMonth}`;
-        const token = localStorage.getItem('accessToken');
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(token && { Authorization: `Bearer ${token}` }),
-            },
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `배치 실행 실패: ${response.status}`);
-        }
-
-        const result: CommonResponse<BatchExecutionResponse> = await response.json();
-        return result.data;
+        const response = await axiosInstance.post(`/api/v1/admin/settlements/batch/run?targetMonth=${targetMonth}`);
+        return response.data.data;
     },
 };
 
@@ -130,12 +85,14 @@ export const settlementService = {
             page,
             size,
         });
-        return request<PageResponse<Settlement>>(url);
+        const response = await axiosInstance.get(url);
+        return response.data.data;
     },
 
     // 특정 사용자의 정산 목록 조회
     getSettlementsByUserId: async (userId: number): Promise<Settlement[]> => {
-        return request<Settlement[]>(`/api/v1/settlements/users/${userId}`);
+        const response = await axiosInstance.get(`/api/v1/settlements/users/${userId}`);
+        return response.data.data;
     },
 
     // 정산 항목 목록 조회
@@ -149,11 +106,13 @@ export const settlementService = {
             page: filter.page,
             size: filter.size,
         });
-        return request<PageResponse<SettlementItem>>(url);
+        const response = await axiosInstance.get(url);
+        return response.data.data;
     },
 
     // 정산 항목 상세 조회
     getSettlementItem: async (settlementItemId: number): Promise<SettlementItem> => {
-        return request<SettlementItem>(`/api/v1/settlements/items/${settlementItemId}`);
+        const response = await axiosInstance.get(`/api/v1/settlements/items/${settlementItemId}`);
+        return response.data.data;
     },
 };

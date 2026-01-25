@@ -1,11 +1,10 @@
 import axios, { type AxiosInstance, type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
-// 기본 백엔드 API URL 설정 (환경변수 또는 하드코딩)
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const BASE_URL = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
+// 기본 백엔드 API URL 설정
+const BASE_URL = import.meta.env.VITE_API_URL || '/';
 
 const axiosInstance: AxiosInstance = axios.create({
-    baseURL: BASE_URL || '/',
+    baseURL: BASE_URL,
     timeout: 5000,
     withCredentials: true,
     headers: {
