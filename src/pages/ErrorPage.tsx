@@ -7,8 +7,11 @@ export const ErrorPage = () => {
 
     // URL 검색 파라미터에서 정보 추출
     const searchParams = new URLSearchParams(location.search);
-    const status = parseInt(searchParams.get('status') || '0');
+    // 주소창 오타 등으로 들어온 경우(status가 없음) 기본값을 404로 설정
+    const status = searchParams.get('status') ? parseInt(searchParams.get('status')!) : 404;
     const message = searchParams.get('message');
+
+    const is404 = status === 404;
 
     const handleRefresh = () => {
         window.location.reload();
@@ -27,15 +30,15 @@ export const ErrorPage = () => {
                 </div>
 
                 <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tight">
-                    {status ? `${status} Error` : 'Oops!'}
+                    {status} Error
                 </h1>
 
                 <h2 className="text-xl font-bold text-gray-800 mb-6">
-                    {status === 404 ? '페이지를 찾을 수 없습니다' : '일시적인 오류가 발생했습니다'}
+                    {is404 ? '페이지를 찾을 수 없습니다' : '일시적인 오류가 발생했습니다'}
                 </h2>
 
                 <p className="text-gray-500 leading-relaxed mb-10 font-medium">
-                    {message || (status === 404
+                    {message || (is404
                         ? '요청하신 페이지가 존재하지 않거나 경로가 변경되었을 수 있습니다.'
                         : '서버와 통신 중 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.')}
                 </p>
