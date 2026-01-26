@@ -47,7 +47,7 @@ function App() {
           <Route path="/mypage/settlement" element={<SettlementList />} />
           <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
           <Route path="/admin/settlement" element={<AdminSettlement />} />
-          <Route path="/admin/products/management" element={<AdminProductManagement />} />
+          <Route path="/admin/products/manage" element={<AdminProductManagement />} />
           <Route path="/error" element={<ErrorPage />} />
           <Route path="*" element={<ErrorPage />} />
         </Route>
