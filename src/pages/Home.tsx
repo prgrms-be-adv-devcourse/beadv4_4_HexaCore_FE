@@ -46,9 +46,11 @@ export const Home = () => {
         }
     };
 
-    const handleCategoryClick = (category: string) => {
-        setActiveCategory(category);
-        navigate(`/shop?categoryName=${category === '전체' ? '' : category}`);
+    const handleCategoryClick = (category: CategoryResponse) => {
+        setActiveCategory(category.name);
+        // "전체" 카테고리인 경우 categoryId를 전달하지 않아 Shop 페이지에서 모든 카테고리를 조회하도록 합니다.
+        const categoryParam = category.name === '전체' ? '' : `category=${category.categoryId}`;
+        navigate(`/shop?${categoryParam}`);
     }
 
     return (
@@ -84,7 +86,7 @@ export const Home = () => {
                                         ? 'bg-white border-[#5c6bc0]/40 text-[#333] font-bold shadow-[0_2px_8px_rgba(92,107,192,0.2)] -translate-y-[0.5px]'
                                         : 'bg-white border-gray-200 text-[#888] hover:border-gray-300 hover:text-[#333]'
                                     }`}
-                                onClick={() => handleCategoryClick(cat.name)}
+                                onClick={() => handleCategoryClick(cat)}
                             >
                                 {cat.name}
                             </button>
