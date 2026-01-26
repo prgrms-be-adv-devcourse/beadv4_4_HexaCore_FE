@@ -1,3 +1,14 @@
+export interface OptionGroupResponse {
+    id: number;
+    name: string;
+    optionValues: OptionValue[];
+}
+
+export interface OptionValue {
+    id: number;
+    value: string;
+}
+
 // 상품 개별 옵션 정보
 export interface ProductOption {
     productOptionValueId: number;
@@ -82,4 +93,47 @@ export interface ProductFilter {
     categoryIds?: number[];
     excludeSoldOut?: boolean;
     sort?: string; // 예: 'LATEST', 'PRICE_LOW'
+}
+
+// --- 상품 생성 및 수정 요청 타입 ---
+
+export interface ProductInfoCreateRequest {
+    brandId: number;
+    categoryId: number;
+    name: string;
+    code: string;
+    releasePrice: number;
+    releasedDate: string; // ISO 8601 format
+}
+
+export interface ProductVariantCreateRequest {
+    optionValueIds: number[];
+    inventory: number;
+    imageUrls: string[];
+}
+
+export interface ProductCreateRequest {
+    productInfo: ProductInfoCreateRequest;
+    variants: ProductVariantCreateRequest[];
+}
+
+export interface ProductInfoUpdateRequest {
+    brandId: number;
+    categoryId: number;
+    name: string;
+    code: string;
+    releasePrice: number;
+    releasedDate: string;
+}
+
+export interface ProductVariantUpdateRequest {
+    productId?: number; // 기존 variant를 수정할 때 필요
+    optionValueIds: number[];
+    inventory: number;
+    imageUrls: string[];
+}
+
+export interface ProductUpdateRequest {
+    productInfo: ProductInfoUpdateRequest;
+    variants: ProductVariantUpdateRequest[];
 }
