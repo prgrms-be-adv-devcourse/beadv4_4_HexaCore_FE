@@ -9,19 +9,30 @@ import {
 } from "@stomp/stompjs";
 import SockJS from "sockjs-client/dist/sockjs";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/";
+import axiosInstance from "../api/axios";
 
 /**
- * ✅ MSA + Proxy 환경 대응:
- * - REST는 VITE_API_URL='/' 로 proxy 타고,
- * - WS는 proxy가 기본적으로 안 타서 chat 서버 실제 주소를 직접 넣는 게 안전함.
- *   .env에 VITE_WS_URL을 넣어두면 그걸 쓰고,
- *   없으면 VITE_BACKEND_CHAT을 fallback으로 사용.
+ * ✅ SockJS는 반드시 http/https 로 시작하는 "절대 URL"을 써야 안전함.
+ * - proxy용 "/" 같은 상대경로는 WS에서 꼬일 수 있으니 차단
+ * - 우선순위: VITE_API_BASE_URL > VITE_API_URL
  */
-const WS_BASE_URL =
-  import.meta.env.VITE_WS_URL ||
-  import.meta.env.VITE_BACKEND_CHAT ||
-  "";
+function resolveHttpBaseUrl(): string {
+  const base =
+    (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
+    (import.meta.env.VITE_API_URL as string | undefined) ||
+    "";
+
+  if (!base) return "";
+
+  // 상대경로(예: "/")는 WS에 부적합 → 차단
+  if (base.startsWith("/")) return "";
+
+  // http/https만 허용
+  if (!(base.startsWith("http://") || base.startsWith("https://"))) return "";
+
+  // trailing slash 제거(중복 슬래시 방지)
+  return base.replace(/\/+$/, "");
+}
 
 /** =========================
  *  Types (백엔드 DTO 기준)
@@ -32,7 +43,7 @@ export interface ChatMessage {
   userId: number;
   content: string;
   isBlinded: boolean;
-  createdAt: string; // LocalDateTime 문자열
+  createdAt: string;
   nickname?: string;
 }
 
@@ -46,12 +57,6 @@ export interface ChatMessageHistoryResponseDto {
   messages: ChatMessage[];
   nextCursorMessageId: number | null;
   hasNext: boolean;
-}
-
-interface CommonResponse<T> {
-  status: number;
-  message: string;
-  data: T;
 }
 
 /** =========================
@@ -79,33 +84,28 @@ function getBoolean(obj: UnknownRecord, key: string): boolean | undefined {
   return typeof v === "boolean" ? v : undefined;
 }
 
-
-/**
- * WS payload는 프로젝트마다 필드가 살짝 다를 수 있어서
- * messageId/id, isBlinded/blinded 등 변형까지 안전하게 흡수
- */
 function parseWsChatMessage(payload: unknown): ChatMessage | null {
   if (!isRecord(payload)) return null;
 
   const messageId =
-    getNumber(payload, "messageId") ??
-    getNumber(payload, "id"); // 혹시 id로 오는 경우 대비
-
+    getNumber(payload, "messageId") ?? getNumber(payload, "id");
   const userId =
-    getNumber(payload, "userId") ??
-    getNumber(payload, "senderId"); // 혹시 senderId로 오는 경우 대비
+    getNumber(payload, "userId") ?? getNumber(payload, "senderId");
 
   const content = getString(payload, "content");
   const createdAt = getString(payload, "createdAt");
 
   const isBlinded =
-    getBoolean(payload, "isBlinded") ??
-    getBoolean(payload, "blinded") ??
-    false;
+    getBoolean(payload, "isBlinded") ?? getBoolean(payload, "blinded") ?? false;
 
   const nickname = getString(payload, "nickname");
 
-  if (messageId === undefined || userId === undefined || content === undefined || createdAt === undefined) {
+  if (
+    messageId === undefined ||
+    userId === undefined ||
+    content === undefined ||
+    createdAt === undefined
+  ) {
     return null;
   }
 
@@ -123,10 +123,10 @@ function parseWsChatMessage(payload: unknown): ChatMessage | null {
  *  REST API
  *  ========================= */
 
-import axiosInstance from "../api/axios";
-
 // Enter chat room
-export async function enterChatRoom(brandId: number): Promise<ChatRoomEnterResponseDto> {
+export async function enterChatRoom(
+  brandId: number
+): Promise<ChatRoomEnterResponseDto> {
   const response = await axiosInstance.post(`/api/v1/chat/enter?brandId=${brandId}`);
   return response.data.data;
 }
@@ -146,8 +146,11 @@ export async function getChatHistory(
   return response.data.data;
 }
 
-// Report message (요청 DTO: chatMessageId + reportReason(enum string))
-export async function reportMessage(chatMessageId: number, reportReason: string): Promise<void> {
+// Report message
+export async function reportMessage(
+  chatMessageId: number,
+  reportReason: string
+): Promise<void> {
   await axiosInstance.post("/api/v1/chat/report", {
     chatMessageId,
     reportReason,
@@ -158,7 +161,10 @@ export async function reportMessage(chatMessageId: number, reportReason: string)
  *  WebSocket(STOMP + SockJS) Hook
  *  ========================= */
 
-export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: string | null) {
+export function useChatWebSocket(
+  chatRoomId: number | null,
+  subscribeTopic: string | null
+) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
@@ -184,18 +190,21 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
   const connect = useCallback(() => {
     if (!chatRoomId || !subscribeTopic) return;
 
-    if (!WS_BASE_URL) {
-      console.error("VITE_WS_URL 또는 VITE_BACKEND_CHAT이 설정되어 있지 않습니다.");
+    const httpBaseUrl = resolveHttpBaseUrl();
+    if (!httpBaseUrl) {
+      console.error(
+        "WS 연결 실패: VITE_API_BASE_URL 또는 VITE_API_URL에 https://도메인 형태의 절대 URL이 필요합니다."
+      );
       return;
     }
 
-    const sockJsUrl = `${WS_BASE_URL}/ws/chat`;
+    // ✅ SockJS는 http/https 엔드포인트로 붙는다 (내부에서 ws/wss 업그레이드)
+    const sockJsUrl = `${httpBaseUrl}/ws/chat`;
 
     const client = new Client({
-      webSocketFactory: (): IStompSocket => {
-        // SockJS 타입과 STOMP 기대 소켓 타입이 완전 동일하지 않아 unknown 캐스팅 사용 (any 금지)
-        return new SockJS(sockJsUrl) as unknown as IStompSocket;
-      },
+      webSocketFactory: (): IStompSocket =>
+        new SockJS(sockJsUrl) as unknown as IStompSocket,
+
       reconnectDelay: 3000,
 
       onConnect: () => {
@@ -207,23 +216,26 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
           subscriptionRef.current = null;
         }
 
-        subscriptionRef.current = client.subscribe(subscribeTopic, (frame: IMessage) => {
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(frame.body) as unknown;
-          } catch (e) {
-            console.error("WS JSON parse error:", e);
-            return;
-          }
+        subscriptionRef.current = client.subscribe(
+          subscribeTopic,
+          (frame: IMessage) => {
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(frame.body) as unknown;
+            } catch (e) {
+              console.error("WS JSON parse error:", e);
+              return;
+            }
 
-          const msg = parseWsChatMessage(parsed);
-          if (!msg) {
-            console.warn("WS payload 형식이 예상과 다릅니다:", parsed);
-            return;
-          }
+            const msg = parseWsChatMessage(parsed);
+            if (!msg) {
+              console.warn("WS payload 형식이 예상과 다릅니다:", parsed);
+              return;
+            }
 
-          setMessages((prev) => [...prev, msg]);
-        });
+            setMessages((prev) => [...prev, msg]);
+          }
+        );
       },
 
       onWebSocketClose: () => setIsConnected(false),
