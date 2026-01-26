@@ -1,42 +1,45 @@
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Info, ArrowDown, ArrowUp, Check
+    getBrands,
+    getCategories,
+    getOptions,
+    getProductDetail,
+    createProduct,
+    updateProduct,
+} from '../../api/product';
+import type {
+    BrandResponse as Brand,
+    CategoryResponse as Category,
+    OptionGroupResponse,
+    ProductCreateRequest,
+    ProductUpdateRequest,
+} from '../../types/product';
+import {
+    ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2
 } from 'lucide-react';
 
-// --- Mock API Service & Data ---
-// In a real application, move to src/api/ and src/types/
-const mockApi = {
-    getBrands: async () => [
-        { brandId: 1, name: 'Nike', logoUrl: '...' },
-        { brandId: 2, name: 'Adidas', logoUrl: '...' }
-    ],
-    getCategories: async () => [
-        { categoryId: 1, name: '신발', imageUrl: '...' },
-        { categoryId: 2, name: '의류', imageUrl: '...' }
-    ],
-    getOptionValues: async () => [
-        { id: 1, value: '250', groupName: '사이즈' },
-        { id: 2, value: '260', groupName: '사이즈' },
-        { id: 3, value: '270', groupName: '사이즈' },
-        { id: 4, value: 'Black', groupName: '색상' },
-        { id: 5, value: 'White', groupName: '색상' },
-    ],
-    getProduct: async (id: number) => ({
-        productInfo: { brandId: 1, categoryId: 1, name: 'Air Force 1', code: 'AF1-001', releasePrice: 139000, releasedDate: new Date().toISOString().substring(0, 16) },
-        variants: [{ productId: 101, optionValueIds: [3, 5], inventory: 10, imageUrls: ['https://example.com/image1.jpg'] }],
-    }),
-    createProduct: async (data: any) => ({ id: 100, ...data }),
-    updateProduct: async (id: number, data: any) => ({ id, ...data }),
-};
+// Form State에 맞는 로컬 타입 정의
+interface FormProductInfo {
+    brandId: number | '';
+    categoryId: number | '';
+    name: string;
+    code: string;
+    releasePrice: number;
+    releasedDate: string;
+}
 
-interface Brand { brandId: number; name: string; }
-interface Category { categoryId: number; name:string; }
-interface OptionValue { id: number; value: string; groupName: string; }
-interface ProductInfoData { brandId: number | ''; categoryId: number | ''; name: string; code: string; releasePrice: number; releasedDate: string; }
-interface ProductVariantData { productId?: number; optionValueIds: number[]; inventory: number; imageUrls: string[]; }
-interface ProductFormData { productInfo: ProductInfoData; variants: ProductVariantData[]; }
+interface FormVariantData {
+    productId?: number;
+    optionValueIds: number[];
+    inventory: number;
+    imageUrls: string[];
+}
+
+interface FormState {
+    productInfo: FormProductInfo;
+    variants: FormVariantData[];
+}
 
 // Reusable Components matching project style
 const FormCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
@@ -54,21 +57,33 @@ const FormField: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 );
 
 const StyledInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input {...props} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition" />
+    <input
+        {...props}
+        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition"
+    />
 );
 
 const StyledSelect = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-    <select {...props} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition appearance-none bg-no-repeat bg-right" style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.7rem center', backgroundSize: '1.2em 1.2em' }} />
+    <select
+        {...props}
+        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition appearance-none bg-no-repeat bg-right"
+        style={{
+            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+            backgroundPosition: 'right 0.7rem center',
+            backgroundSize: '1.2em 1.2em'
+        }}
+    />
 );
 
-const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void, type?: 'button'|'submit', disabled?: boolean }> =
-    ({ children, ...props }) => (
-    <button {...props} className="h-14 w-full bg-gray-900 text-white font-bold rounded-xl shadow-md shadow-gray-900/10 transition-all hover:bg-gray-800 active:scale-[0.98] disabled:bg-gray-300 disabled:shadow-none">
+const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void, type?: 'button'|'submit', disabled?: boolean }> = ({ children, ...props }) => (
+    <button
+        {...props}
+        className="h-14 w-full bg-gray-900 text-white font-bold rounded-xl shadow-md shadow-gray-900/10 transition-all hover:bg-gray-800 active:scale-[0.98] disabled:bg-gray-300 disabled:shadow-none"
+    >
         {children}
     </button>
 );
 
-// New Admin Product Management Page
 export const AdminProductManagement = () => {
     const { productInfoId } = useParams<{ productInfoId: string }>();
     const navigate = useNavigate();
@@ -76,31 +91,62 @@ export const AdminProductManagement = () => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    const [formData, setFormData] = useState<ProductFormData>({
+
+    const [formData, setFormData] = useState<FormState>({
         productInfo: { brandId: '', categoryId: '', name: '', code: '', releasePrice: 0, releasedDate: '' },
         variants: [],
     });
 
     const [brands, setBrands] = useState<Brand[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [optionValues, setOptionValues] = useState<OptionValue[]>([]);
+    const [groupedOptions, setGroupedOptions] = useState<OptionGroupResponse[]>([]);
 
-    // Data Fetching
     useEffect(() => {
         const fetchData = async () => {
             setIsLoading(true);
             try {
-                const [brandsData, categoriesData, optionValuesData] = await Promise.all([
-                    mockApi.getBrands(), mockApi.getCategories(), mockApi.getOptionValues(),
+                const [brandsData, categoriesData, optionsData] = await Promise.all([
+                    getBrands(), getCategories(), getOptions(),
                 ]);
                 setBrands(brandsData);
                 setCategories(categoriesData);
-                setOptionValues(optionValuesData);
+                setGroupedOptions(optionsData);
 
                 if (isEditing && productInfoId) {
-                    const productData = await mockApi.getProduct(Number(productInfoId));
-                    setFormData(productData);
+                    const productData = await getProductDetail(Number(productInfoId));
+
+                    const optionValueMap = new Map<string, number>();
+                    optionsData.forEach(group => {
+                        group.optionValues.forEach(val => {
+                            optionValueMap.set(`${group.name}:${val.value}`, val.id);
+                        });
+                    });
+
+                    const mappedVariants = productData.products.map(p => {
+                        const ids = p.options.map(opt => {
+                            const key = `${opt.groupName}:${opt.value}`;
+                            return optionValueMap.get(key);
+                        }).filter((id): id is number => id !== undefined);
+
+                        return {
+                            productId: p.productId,
+                            inventory: p.inventory,
+                            optionValueIds: ids,
+                            imageUrls: p.imageUrls,
+                        };
+                    });
+
+                    setFormData({
+                        productInfo: {
+                            brandId: productData.productInfo.brand.brandId,
+                            categoryId: productData.productInfo.category.categoryId,
+                            name: productData.productInfo.name,
+                            code: productData.productInfo.code,
+                            releasePrice: productData.productInfo.releasePrice,
+                            releasedDate: new Date(productData.productInfo.releaseDate).toISOString().substring(0, 16),
+                        },
+                        variants: mappedVariants
+                    });
                 }
             } catch (err) {
                 console.error("Failed to load initial data", err);
@@ -112,7 +158,6 @@ export const AdminProductManagement = () => {
         fetchData();
     }, [isEditing, productInfoId]);
 
-    // Handlers
     const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
@@ -124,7 +169,7 @@ export const AdminProductManagement = () => {
         }));
     };
 
-    const handleVariantChange = (index: number, field: keyof ProductVariantData, value: any) => {
+    const handleVariantChange = (index: number, field: keyof FormVariantData, value: any) => {
         const newVariants = [...formData.variants];
         (newVariants[index] as any)[field] = value;
         setFormData(prev => ({ ...prev, variants: newVariants }));
@@ -139,7 +184,8 @@ export const AdminProductManagement = () => {
 
     const removeVariant = (index: number) => {
         setFormData(prev => ({
-            ...prev, variants: prev.variants.filter((_, i) => i !== index),
+            ...prev,
+            variants: prev.variants.filter((_, i) => i !== index),
         }));
     };
 
@@ -164,7 +210,7 @@ export const AdminProductManagement = () => {
             ),
         }));
     };
-    
+
     const toggleOptionValue = (variantIndex: number, optionValueId: number) => {
         const newVariants = [...formData.variants];
         const currentOptions = newVariants[variantIndex].optionValueIds;
@@ -178,16 +224,33 @@ export const AdminProductManagement = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!formData.productInfo.brandId || !formData.productInfo.categoryId) {
+            alert("브랜드와 카테고리를 선택해주세요.");
+            return;
+        }
+
         setIsSubmitting(true);
         try {
+            const payload: ProductCreateRequest | ProductUpdateRequest = {
+                ...formData,
+                productInfo: {
+                    ...formData.productInfo,
+                    brandId: Number(formData.productInfo.brandId),
+                    categoryId: Number(formData.productInfo.categoryId),
+                    releasedDate: new Date(formData.productInfo.releasedDate).toISOString()
+                },
+                variants: formData.variants,
+            };
+
             if (isEditing && productInfoId) {
-                await mockApi.updateProduct(Number(productInfoId), formData);
+                await updateProduct(Number(productInfoId), payload as ProductUpdateRequest);
                 alert('상품이 수정되었습니다.');
             } else {
-                await mockApi.createProduct(formData);
+                await createProduct(payload as ProductCreateRequest);
                 alert('상품이 등록되었습니다.');
             }
-            navigate('/admin'); // Redirect to some admin list page
+            navigate('/'); // 임시로, 메인 페이지로 이동
         } catch (error) {
             console.error('Failed to save product:', error);
             alert('상품 저장에 실패했습니다.');
@@ -195,13 +258,6 @@ export const AdminProductManagement = () => {
             setIsSubmitting(false);
         }
     };
-
-    const groupedOptions = useMemo(() => {
-        return optionValues.reduce((acc, option) => {
-            (acc[option.groupName] = acc[option.groupName] || []).push(option);
-            return acc;
-        }, {} as Record<string, OptionValue[]>);
-    }, [optionValues]);
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-10 h-10" /></div>;
@@ -220,8 +276,12 @@ export const AdminProductManagement = () => {
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <FormCard title="상품 기본 정보">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-                            <FormField label="상품명"><StyledInput name="name" value={formData.productInfo.name} onChange={handleInfoChange} required /></FormField>
-                            <FormField label="상품 코드"><StyledInput name="code" value={formData.productInfo.code} onChange={handleInfoChange} required /></FormField>
+                            <FormField label="상품명">
+                                <StyledInput name="name" value={formData.productInfo.name} onChange={handleInfoChange} required />
+                            </FormField>
+                            <FormField label="상품 코드">
+                                <StyledInput name="code" value={formData.productInfo.code} onChange={handleInfoChange} required />
+                            </FormField>
                             <FormField label="브랜드">
                                 <StyledSelect name="brandId" value={formData.productInfo.brandId} onChange={handleInfoChange} required>
                                     <option value="" disabled>브랜드를 선택하세요</option>
@@ -234,8 +294,12 @@ export const AdminProductManagement = () => {
                                     {categories.map(c => <option key={c.categoryId} value={c.categoryId}>{c.name}</option>)}
                                 </StyledSelect>
                             </FormField>
-                            <FormField label="발매가"><StyledInput type="number" name="releasePrice" value={formData.productInfo.releasePrice} onChange={handleInfoChange} required /></FormField>
-                            <FormField label="발매일"><StyledInput type="datetime-local" name="releasedDate" value={formData.productInfo.releasedDate} onChange={handleInfoChange} required /></FormField>
+                            <FormField label="발매가">
+                                <StyledInput type="number" name="releasePrice" value={formData.productInfo.releasePrice} onChange={handleInfoChange} required />
+                            </FormField>
+                            <FormField label="발매일">
+                                <StyledInput type="datetime-local" name="releasedDate" value={formData.productInfo.releasedDate} onChange={handleInfoChange} required />
+                            </FormField>
                         </div>
                     </FormCard>
 
@@ -244,20 +308,23 @@ export const AdminProductManagement = () => {
                             {formData.variants.map((variant, vIdx) => (
                                 <div key={vIdx} className="bg-gray-50/70 p-6 rounded-xl border border-gray-200/80 relative">
                                     <h4 className="font-bold text-gray-700 mb-4">옵션 #{vIdx + 1}</h4>
-                                    
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                                         <FormField label="재고">
                                             <StyledInput type="number" value={variant.inventory} onChange={e => handleVariantChange(vIdx, 'inventory', Number(e.target.value))} />
                                         </FormField>
-                                        
                                         <FormField label="옵션 선택">
                                             <div className="space-y-4">
-                                                {Object.entries(groupedOptions).map(([groupName, options]) => (
-                                                    <div key={groupName}>
-                                                        <p className="text-xs font-semibold text-gray-600 mb-2">{groupName}</p>
+                                                {groupedOptions.map((group) => (
+                                                    <div key={group.id}>
+                                                        <p className="text-xs font-semibold text-gray-600 mb-2">{group.name}</p>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {options.map(opt => (
-                                                                <button key={opt.id} type="button" onClick={() => toggleOptionValue(vIdx, opt.id)} className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${variant.optionValueIds.includes(opt.id) ? 'bg-accent/10 border-accent text-accent' : 'bg-white border-gray-200 hover:border-gray-400'}`}>
+                                                            {group.optionValues.map(opt => (
+                                                                <button
+                                                                    key={opt.id}
+                                                                    type="button"
+                                                                    onClick={() => toggleOptionValue(vIdx, opt.id)}
+                                                                    className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${variant.optionValueIds.includes(opt.id) ? 'bg-accent/10 border-accent text-accent' : 'bg-white border-gray-200 hover:border-gray-400'}`}
+                                                                >
                                                                     {opt.value}
                                                                 </button>
                                                             ))}
@@ -266,32 +333,38 @@ export const AdminProductManagement = () => {
                                                 ))}
                                             </div>
                                         </FormField>
-                                        
                                         <div className="md:col-span-2">
-                                        <FormField label="이미지 URL">
-                                            <div className="space-y-3">
-                                            {variant.imageUrls.map((url, iIdx) => (
-                                                <div key={iIdx} className="flex items-center gap-2">
-                                                    <StyledInput type="url" placeholder="https://example.com/image.jpg" value={url} onChange={e => handleImageUrlChange(vIdx, iIdx, e.target.value)} required />
-                                                    <button type="button" onClick={() => removeImageUrl(vIdx, iIdx)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
-                                                        <Trash2 size={16} />
+                                            <FormField label="이미지 URL">
+                                                <div className="space-y-3">
+                                                    {variant.imageUrls.map((url, iIdx) => (
+                                                        <div key={iIdx} className="flex items-center gap-2">
+                                                            <StyledInput type="url" placeholder="https://example.com/image.jpg" value={url} onChange={e => handleImageUrlChange(vIdx, iIdx, e.target.value)} required />
+                                                            <button type="button" onClick={() => removeImageUrl(vIdx, iIdx)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => addImageUrl(vIdx)}
+                                                        className="w-full mt-2 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 bg-white border-2 border-dashed border-gray-300 rounded-lg py-3 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                                                    >
+                                                        <ImageIcon size={16} /> 이미지 URL 추가
                                                     </button>
                                                 </div>
-                                            ))}
-                                            <button type="button" onClick={() => addImageUrl(vIdx)} className="w-full mt-2 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 bg-white border-2 border-dashed border-gray-300 rounded-lg py-3 hover:bg-gray-50 hover:border-gray-400 transition-colors">
-                                                <ImageIcon size={16} /> 이미지 URL 추가
-                                            </button>
-                                            </div>
-                                        </FormField>
+                                            </FormField>
                                         </div>
                                     </div>
-                                    
                                     <button type="button" onClick={() => removeVariant(vIdx)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
                                         <X size={18} />
                                     </button>
                                 </div>
                             ))}
-                             <button type="button" onClick={addVariant} className="w-full flex items-center justify-center gap-2 text-sm font-bold text-accent bg-accent/5 border-2 border-dashed border-accent/20 rounded-xl py-4 hover:bg-accent/10 transition-colors">
+                            <button
+                                type="button"
+                                onClick={addVariant}
+                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-accent bg-accent/5 border-2 border-dashed border-accent/20 rounded-xl py-4 hover:bg-accent/10 transition-colors"
+                            >
                                 <Plus size={16} /> 새 옵션 추가
                             </button>
                         </div>
@@ -299,12 +372,9 @@ export const AdminProductManagement = () => {
 
                     <div className="flex justify-end pt-4">
                         <div className="w-full md:w-1/4">
-                        <PrimaryButton type="submit" disabled={isSubmitting}>
-                            {isSubmitting
-                                ? <Loader2 className="animate-spin mx-auto"/>
-                                : isEditing ? '상품 수정하기' : '상품 등록하기'
-                            }
-                        </PrimaryButton>
+                            <PrimaryButton type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="animate-spin mx-auto"/> : isEditing ? '상품 수정하기' : '상품 등록하기'}
+                            </PrimaryButton>
                         </div>
                     </div>
                 </form>
@@ -314,4 +384,3 @@ export const AdminProductManagement = () => {
 };
 
 export default AdminProductManagement;
-
