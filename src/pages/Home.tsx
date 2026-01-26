@@ -2,37 +2,41 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductCard } from '../components/ProductCard';
 import { SearchBar } from '../components/SearchBar';
-import { getProducts } from '../api/product';
-import type { ProductListResponse } from '../types/product';
+import { getProducts, getCategories } from '../api/product';
+import type { ProductListResponse, CategoryResponse } from '../types/product';
 import { Loader2, AlertCircle } from 'lucide-react';
-
-const CATEGORIES = ["전체", "스니커즈", "의류", "액세서리", "컬렉터블"];
 
 export const Home = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState<ProductListResponse[]>([]);
+    const [categories, setCategories] = useState<CategoryResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState("전체");
     const [searchKeyword, setSearchKeyword] = useState('');
-    const [totalElements, setTotalElements] = useState(0); // Add totalElements state
+    const [totalElements, setTotalElements] = useState(0);
 
     useEffect(() => {
-        const fetchPopularProducts = async () => {
+        const fetchInitialData = async () => {
             setIsLoading(true);
             setError(null);
             try {
-                const response = await getProducts({ page: 0, size: 8, sort: 'LATEST' });
-                setProducts(response.products); // Extract products from the paginated response
-                setTotalElements(response.totalElements); // Set totalElements
+                const [productResponse, categoryResponse] = await Promise.all([
+                    getProducts({ page: 0, size: 8, sort: 'LATEST' }),
+                    getCategories()
+                ]);
+                setProducts(productResponse.products);
+                setTotalElements(productResponse.totalElements);
+                // "전체" 카테고리를 맨 앞에 추가
+                setCategories([{ categoryId: 0, name: "전체" }, ...categoryResponse]);
             } catch (err) {
-                setError('인기 상품을 불러오는 데 실패했습니다.');
+                setError('데이터를 불러오는 데 실패했습니다.');
                 console.error(err);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchPopularProducts();
+        fetchInitialData();
     }, []);
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -72,17 +76,17 @@ export const Home = () => {
 
             <div className="sticky top-[60px] z-[50] border-b border-[#eee] bg-white py-4">
                 <ul className="flex justify-center gap-4 m-0 p-0 list-none">
-                    {CATEGORIES.map(cat => (
-                        <li key={cat}>
+                    {categories.map(cat => (
+                        <li key={cat.categoryId}>
                             <button
                                 className={`rounded-[20px] border border-solid px-5 py-2 text-sm transition-all duration-200 cursor-pointer
-                                    ${activeCategory === cat
+                                    ${activeCategory === cat.name
                                         ? 'bg-white border-[#5c6bc0]/40 text-[#333] font-bold shadow-[0_2px_8px_rgba(92,107,192,0.2)] -translate-y-[0.5px]'
                                         : 'bg-white border-gray-200 text-[#888] hover:border-gray-300 hover:text-[#333]'
                                     }`}
-                                onClick={() => handleCategoryClick(cat)}
+                                onClick={() => handleCategoryClick(cat.name)}
                             >
-                                {cat}
+                                {cat.name}
                             </button>
                         </li>
                     ))}
