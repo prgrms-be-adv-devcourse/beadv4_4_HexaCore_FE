@@ -74,19 +74,20 @@ export const Shop = () => {
     useEffect(() => {
         const filters = {
             page,
+            keyword: searchKeyword,
             brandId: activeBrandId,
             categoryId: activeCategoryId
         };
-        // Trigger fetch only for page, brand, and category changes
+        // Trigger fetch for page, brand, category, and keyword changes
         fetchProducts(filters);
 
         const newSearchParams = new URLSearchParams();
         if (searchKeyword) newSearchParams.set('keyword', searchKeyword);
         if (activeBrandId) newSearchParams.set('brand', String(activeBrandId));
         if (activeCategoryId) newSearchParams.set('category', String(activeCategoryId));
-        setSearchParams(newSearchParams);
+        setSearchParams(newSearchParams, { replace: true });
 
-    }, [page, activeBrandId, activeCategoryId, fetchProducts, setSearchParams]);
+    }, [page, searchKeyword, activeBrandId, activeCategoryId, fetchProducts, setSearchParams]);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -154,7 +155,7 @@ export const Shop = () => {
                                         }`}
                                     onClick={() => { setActiveBrandId(null); setPage(0); }}
                                 >
-                                    전체 브랜드
+                                    전체
                                 </button>
                             </li>
                             {brands.map(brand => (
