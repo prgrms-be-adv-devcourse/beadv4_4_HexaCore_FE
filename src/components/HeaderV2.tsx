@@ -106,12 +106,22 @@ export const HeaderV2 = () => {
     const { isAuthenticated } = useAuthStore();
     const { cartItems, clearCart } = useCartStore();
     const { clearWishlist } = useWishlistStore();
+    const [searchKeyword, setSearchKeyword] = useState('');
+    const navigate = useNavigate();
 
     const handleLogout = async () => {
         await logout();
         clearCart();
         clearWishlist();
         window.location.href = '/';
+    };
+
+    const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (searchKeyword.trim()) {
+            navigate(`/shop?keyword=${searchKeyword}`);
+            setSearchKeyword('');
+        }
     };
 
     useEffect(() => {
@@ -179,14 +189,16 @@ export const HeaderV2 = () => {
                 {/* Right Actions */}
                 <div className="flex items-center gap-2 md:gap-4">
                     {/* Search Bar (Desktop) */}
-                    <div className="hidden md:flex items-center bg-black/5 hover:bg-black/10 rounded-full px-4 py-2 transition-colors cursor-pointer group">
+                    <form onSubmit={handleSearch} className="hidden md:flex items-center bg-black/5 hover:bg-black/10 rounded-full px-4 py-2 transition-colors group">
                         <Search size={18} className="text-gray-500 group-hover:text-black transition-colors" />
                         <input
                             type="text"
                             placeholder="검색어를 입력하세요"
                             className="bg-transparent border-none outline-none ml-2 text-sm w-32 focus:w-48 transition-all duration-300"
+                            value={searchKeyword}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
                         />
-                    </div>
+                    </form>
 
                     <div className="flex items-center gap-1 md:gap-3 relative" ref={notifContainerRef}>
                         {/* Notifications */}

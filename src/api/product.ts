@@ -4,7 +4,7 @@ import type {
     CategoryResponse,
     PaginatedProductList,
     ProductFilter,
-    ProductDetailResponse
+    ProductDetailResponse, ProductCreateRequest, ProductUpdateRequest, OptionGroupResponse
 } from '../types/product';
 
 // URL 쿼리 파라미터 생성 헬퍼
@@ -72,3 +72,21 @@ export const getCategories = async (): Promise<CategoryResponse[]> => {
     const response = await axiosInstance.get('/api/v1/products/categories');
     return response.data.data.categories;
 };
+
+// 상품 생성
+export const createProduct = async (productData: ProductCreateRequest): Promise<ProductDetailResponse> => {
+    const response = await axiosInstance.post('/api/v1/products', productData);
+    return response.data.data;
+};
+
+// 상품 수정
+export const updateProduct = async (productInfoId: number, productData: ProductUpdateRequest): Promise<ProductDetailResponse> => {
+    const response = await axiosInstance.put(`/api/v1/products/${productInfoId}`, productData);
+    return response.data.data;
+};
+
+// 상품 옵션 목록 조회
+export const getOptions = async (): Promise<OptionGroupResponse[]> => {
+    const response = await axiosInstance.get('/api/v1/products/options')
+    return response.data.data;
+}

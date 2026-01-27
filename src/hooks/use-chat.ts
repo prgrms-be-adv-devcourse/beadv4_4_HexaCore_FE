@@ -217,23 +217,26 @@ export function useChatWebSocket(
           subscriptionRef.current = null;
         }
 
-        subscriptionRef.current = client.subscribe(subscribeTopic, (frame: IMessage) => {
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(frame.body) as unknown;
-          } catch (e) {
-            console.error("WS JSON parse error:", e);
-            return;
-          }
+        subscriptionRef.current = client.subscribe(
+          subscribeTopic,
+          (frame: IMessage) => {
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(frame.body) as unknown;
+            } catch (e) {
+              console.error("WS JSON parse error:", e);
+              return;
+            }
 
-          const msg = parseWsChatMessage(parsed);
-          if (!msg) {
-            console.warn("WS payload 형식이 예상과 다릅니다:", parsed);
-            return;
-          }
+            const msg = parseWsChatMessage(parsed);
+            if (!msg) {
+              console.warn("WS payload 형식이 예상과 다릅니다:", parsed);
+              return;
+            }
 
-          setMessages((prev) => [...prev, msg]);
-        });
+            setMessages((prev) => [...prev, msg]);
+          }
+        );
       },
 
       onWebSocketClose: () => setIsConnected(false),
