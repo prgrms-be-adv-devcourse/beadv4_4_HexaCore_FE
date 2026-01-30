@@ -45,8 +45,8 @@ export const emailLogin = async (email: string, password: string) => {
  */
 export const logout = async () => {
   try {
-    // 백엔드 URL이 확실치 않지만, 보통 Security 기본은 /logout
-    await axiosInstance.post("/logout");
+    // 백엔드 로그아웃 API 호출
+    await axiosInstance.post("/api/v1/users/logout");
   } catch (err) {
     console.error("Logout request failed:", err);
   } finally {
