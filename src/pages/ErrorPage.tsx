@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AlertCircle, Home, RefreshCcw, ChevronLeft } from 'lucide-react';
 
@@ -10,6 +11,21 @@ export const ErrorPage = () => {
     // 주소창 오타 등으로 들어온 경우(status가 없음) 기본값을 404로 설정
     const status = searchParams.get('status') ? parseInt(searchParams.get('status')!) : 404;
     const message = searchParams.get('message');
+    const path = searchParams.get('path') || location.pathname;
+    const apiUrl = searchParams.get('apiUrl');
+    const method = searchParams.get('method');
+
+    useEffect(() => {
+        console.group('Error Page Details');
+        console.error('Status:', status);
+        console.error('Message:', message || (status === 404 ? 'Page Not Found' : 'Internal Server Error'));
+        console.error('Path:', path);
+        if (apiUrl) {
+            console.error('Failed API:', `${method || 'GET'} ${apiUrl}`);
+        }
+        console.error('Full URL:', window.location.href);
+        console.groupEnd();
+    }, [status, message, path, apiUrl, method]);
 
     const is404 = status === 404;
 
