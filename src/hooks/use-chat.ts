@@ -14,17 +14,19 @@ import axiosInstance from "../api/axios";
 /**
  * ✅ SockJS는 http/https 기반 URL만 허용
  * - 우선순위: VITE_API_BASE_URL > VITE_API_URL > VITE_BACKEND_CHAT
- * - 상대경로("/") 차단
+ * - 상대경로("/") 차단 (WS는 proxy 혼선 가능)
  * - ws://, wss:// 차단
  */
 function resolveWsHttpBaseUrl(): string {
-  const base =
+  const raw =
     (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
     (import.meta.env.VITE_API_URL as string | undefined) ||
     (import.meta.env.VITE_BACKEND_CHAT as string | undefined) ||
     "";
 
-  if (!base) return "";
+  if (!raw) return "";
+
+  const base = raw.trim();
 
   // proxy용 상대경로는 WS에 부적합
   if (base.startsWith("/")) return "";
@@ -180,23 +182,22 @@ export function useChatWebSocket(
     const httpBaseUrl = resolveWsHttpBaseUrl();
     if (!httpBaseUrl) {
       console.error(
-        "WS 연결 실패: VITE_API_BASE_URL / VITE_API_URL / VITE_BACKEND_CHAT 중 하나에 " +
-          "https://도메인 형태의 절대 URL이 필요합니다."
+        "WS 연결 실패: WS는 절대 URL이 필요합니다.\n" +
+          "예) VITE_API_BASE_URL=https://api.resello.co.kr"
       );
       return;
     }
 
-    // ✅ SockJS는 http/https 엔드포인트로 접속 (내부에서 ws/wss 업그레이드)
+    // ✅ Ingress가 /ws/chat 이므로, 여기서도 고정
     const sockJsUrl = `${httpBaseUrl}/ws/chat`;
 
-    // ✅ 디버그 로그 (배포 env 반영/혼선 확인용)
+    // ✅ 디버그 로그
     console.log("[WS ENV] VITE_API_BASE_URL =", import.meta.env.VITE_API_BASE_URL);
     console.log("[WS ENV] VITE_API_URL      =", import.meta.env.VITE_API_URL);
     console.log("[WS ENV] VITE_BACKEND_CHAT =", import.meta.env.VITE_BACKEND_CHAT);
     console.log("[WS RESOLVED] httpBaseUrl  =", httpBaseUrl);
     console.log("[WS RESOLVED] sockJsUrl    =", sockJsUrl);
 
-    // (선택) STOMP CONNECT 인증 헤더
     const token =
       (typeof window !== "undefined" && localStorage.getItem("accessToken")) || "";
 
@@ -211,7 +212,6 @@ export function useChatWebSocket(
       onConnect: () => {
         setIsConnected(true);
 
-        // 중복 subscribe 방지
         if (subscriptionRef.current) {
           subscriptionRef.current.unsubscribe();
           subscriptionRef.current = null;
