@@ -11,12 +11,6 @@ import SockJS from "sockjs-client/dist/sockjs";
 
 import axiosInstance from "../api/axios";
 
-/**
- * ✅ SockJS는 http/https 기반 URL만 허용
- * - 우선순위: VITE_API_BASE_URL > VITE_API_URL > VITE_BACKEND_CHAT
- * - 상대경로("/") 차단 (WS는 proxy 혼선 가능)
- * - ws://, wss:// 차단
- */
 function resolveWsHttpBaseUrl(): string {
   const raw =
     (import.meta.env.VITE_API_BASE_URL as string | undefined) ||
@@ -25,23 +19,16 @@ function resolveWsHttpBaseUrl(): string {
     "";
 
   if (!raw) return "";
-
   const base = raw.trim();
 
-  // proxy용 상대경로는 WS에 부적합
   if (base.startsWith("/")) return "";
-
-  // SockJS는 http/https만
   if (!(base.startsWith("http://") || base.startsWith("https://"))) return "";
-
-  // trailing slash 제거
   return base.replace(/\/+$/, "");
 }
 
 /** =========================
- *  Types (백엔드 DTO 기준)
+ *  Types
  *  ========================= */
-
 export interface ChatMessage {
   messageId: number;
   userId: number;
@@ -53,7 +40,7 @@ export interface ChatMessage {
 
 export interface ChatRoomEnterResponseDto {
   chatRoomId: number;
-  subscribeTopic: string; // 예: "/topic/chatroom/1"
+  subscribeTopic: string;
 }
 
 export interface ChatMessageHistoryResponseDto {
@@ -64,25 +51,21 @@ export interface ChatMessageHistoryResponseDto {
 }
 
 /** =========================
- *  JSON 파싱 유틸 (any 금지)
+ *  JSON parse
  *  ========================= */
-
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
 }
-
 function getNumber(obj: UnknownRecord, key: string): number | undefined {
   const v = obj[key];
   return typeof v === "number" ? v : undefined;
 }
-
 function getString(obj: UnknownRecord, key: string): string | undefined {
   const v = obj[key];
   return typeof v === "string" ? v : undefined;
 }
-
 function getBoolean(obj: UnknownRecord, key: string): boolean | undefined {
   const v = obj[key];
   return typeof v === "boolean" ? v : undefined;
@@ -93,7 +76,6 @@ function parseWsChatMessage(payload: unknown): ChatMessage | null {
 
   const messageId = getNumber(payload, "messageId") ?? getNumber(payload, "id");
   const userId = getNumber(payload, "userId") ?? getNumber(payload, "senderId");
-
   const content = getString(payload, "content");
   const createdAt = getString(payload, "createdAt");
 
@@ -102,102 +84,106 @@ function parseWsChatMessage(payload: unknown): ChatMessage | null {
 
   const nickname = getString(payload, "nickname");
 
-  if (
-    messageId === undefined ||
-    userId === undefined ||
-    content === undefined ||
-    createdAt === undefined
-  ) {
+  if (messageId === undefined || userId === undefined || !content || !createdAt) {
     return null;
   }
 
   return { messageId, userId, content, isBlinded, createdAt, nickname };
 }
 
+function safeJson(body: string): unknown {
+  try {
+    return JSON.parse(body) as unknown;
+  } catch (e) {
+    console.error("WS JSON parse error:", e);
+    return null;
+  }
+}
+
 /** =========================
  *  REST API
  *  ========================= */
-
-export async function enterChatRoom(
-  brandId: number
-): Promise<ChatRoomEnterResponseDto> {
+export async function enterChatRoom(brandId: number): Promise<ChatRoomEnterResponseDto> {
   const response = await axiosInstance.post(`/api/v1/chat/enter?brandId=${brandId}`);
   return response.data.data;
 }
 
+/**
+ * ✅ size 파라미터 없음(서버 30 고정)
+ * ✅ cursor 파라미터 이름: nextCursorMessageId
+ */
 export async function getChatHistory(
   roomId: number,
-  cursorMessageId?: number
+  nextCursorMessageId?: number
 ): Promise<ChatMessageHistoryResponseDto> {
   const params = new URLSearchParams({ roomId: String(roomId) });
 
-  if (cursorMessageId !== undefined && cursorMessageId !== null) {
-    params.append("cursorMessageId", String(cursorMessageId));
+  if (nextCursorMessageId !== undefined && nextCursorMessageId !== null) {
+    params.append("nextCursorMessageId", String(nextCursorMessageId));
   }
 
-  const response = await axiosInstance.get(`/api/v1/chat/history?${params}`);
+  const response = await axiosInstance.get(`/api/v1/chat/history?${params.toString()}`);
   return response.data.data;
 }
 
-export async function reportMessage(
-  chatMessageId: number,
-  reportReason: string
-): Promise<void> {
+export async function reportMessage(chatMessageId: number, reportReason: string): Promise<void> {
   await axiosInstance.post("/api/v1/chat/report", { chatMessageId, reportReason });
 }
 
 /** =========================
- *  WebSocket(STOMP + SockJS) Hook
+ *  WebSocket Hook
  *  ========================= */
-
-export function useChatWebSocket(
-  chatRoomId: number | null,
-  subscribeTopic: string | null
-) {
+export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
   const clientRef = useRef<Client | null>(null);
   const subscriptionRef = useRef<StompSubscription | null>(null);
 
-  const disconnect = useCallback(() => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
-    }
+  const seenMessageIdsRef = useRef<Set<number>>(new Set());
+
+  const roomIdRef = useRef<number | null>(null);
+  const topicRef = useRef<string | null>(null);
+
+  useEffect(() => { roomIdRef.current = chatRoomId; }, [chatRoomId]);
+  useEffect(() => { topicRef.current = subscribeTopic; }, [subscribeTopic]);
+
+  const disconnectTransportOnly = useCallback(() => {
+    try { subscriptionRef.current?.unsubscribe(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
+    subscriptionRef.current = null;
 
     const client = clientRef.current;
     if (client) {
-      client.deactivate();
+      try { client.deactivate(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
       clientRef.current = null;
     }
-
     setIsConnected(false);
+  }, []);
+
+  const resetMessages = useCallback(() => {
+    seenMessageIdsRef.current = new Set();
     setMessages([]);
   }, []);
 
+  const setMessagesFromHistory = useCallback((list: ChatMessage[]) => {
+    const seen = new Set<number>();
+    for (const m of list) seen.add(m.messageId);
+    seenMessageIdsRef.current = seen;
+    setMessages(list);
+  }, []);
+
   const connect = useCallback(() => {
-    if (!chatRoomId || !subscribeTopic) return;
+    const rid = roomIdRef.current;
+    const topic = topicRef.current;
+    if (!rid || !topic) return;
 
     const httpBaseUrl = resolveWsHttpBaseUrl();
     if (!httpBaseUrl) {
-      console.error(
-        "WS 연결 실패: WS는 절대 URL이 필요합니다.\n" +
-          "예) VITE_API_BASE_URL=https://api.resello.co.kr"
-      );
+      console.error("WS 연결 실패: VITE_API_BASE_URL 같은 절대 URL이 필요합니다.");
       return;
     }
 
-    // ✅ Ingress가 /ws/chat 이므로, 여기서도 고정
     const sockJsUrl = `${httpBaseUrl}/ws/chat`;
-
-    // ✅ 디버그 로그
-    console.log("[WS ENV] VITE_API_BASE_URL =", import.meta.env.VITE_API_BASE_URL);
-    console.log("[WS ENV] VITE_API_URL      =", import.meta.env.VITE_API_URL);
-    console.log("[WS ENV] VITE_BACKEND_CHAT =", import.meta.env.VITE_BACKEND_CHAT);
-    console.log("[WS RESOLVED] httpBaseUrl  =", httpBaseUrl);
-    console.log("[WS RESOLVED] sockJsUrl    =", sockJsUrl);
-
     const token =
       (typeof window !== "undefined" && localStorage.getItem("accessToken")) || "";
 
@@ -206,43 +192,30 @@ export function useChatWebSocket(
         new SockJS(sockJsUrl) as unknown as IStompSocket,
 
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
-
       reconnectDelay: 3000,
 
       onConnect: () => {
         setIsConnected(true);
 
-        if (subscriptionRef.current) {
-          subscriptionRef.current.unsubscribe();
-          subscriptionRef.current = null;
-        }
+        try { subscriptionRef.current?.unsubscribe(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
+        subscriptionRef.current = null;
 
-        subscriptionRef.current = client.subscribe(subscribeTopic, (frame: IMessage) => {
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(frame.body) as unknown;
-          } catch (e) {
-            console.error("WS JSON parse error:", e);
-            return;
-          }
+        subscriptionRef.current = client.subscribe(topic, (frame: IMessage) => {
+          const msg = parseWsChatMessage(safeJson(frame.body));
+          if (!msg) return;
 
-          const msg = parseWsChatMessage(parsed);
-          if (!msg) {
-            console.warn("WS payload 형식이 예상과 다릅니다:", parsed);
-            return;
-          }
+          if (seenMessageIdsRef.current.has(msg.messageId)) return;
+          seenMessageIdsRef.current.add(msg.messageId);
 
           setMessages((prev) => [...prev, msg]);
         });
       },
 
       onWebSocketClose: () => setIsConnected(false),
-
       onStompError: (frame) => {
         console.error("STOMP error:", frame.headers["message"], frame.body);
         setIsConnected(false);
       },
-
       onWebSocketError: (e) => {
         console.error("WebSocket error:", e);
         setIsConnected(false);
@@ -251,25 +224,31 @@ export function useChatWebSocket(
 
     client.activate();
     clientRef.current = client;
-  }, [chatRoomId, subscribeTopic]);
+  }, []);
 
-  const sendMessage = useCallback(
-    (content: string) => {
-      const client = clientRef.current;
-      if (!client || !client.connected || !chatRoomId) return;
+  const sendMessage = useCallback((content: string) => {
+    const client = clientRef.current;
+    const rid = roomIdRef.current;
+    if (!client || !client.connected || !rid) return;
 
-      client.publish({
-        destination: "/app/message",
-        body: JSON.stringify({ roomId: chatRoomId, content }),
-      });
-    },
-    [chatRoomId]
-  );
+    client.publish({
+      destination: "/app/message",
+      body: JSON.stringify({ roomId: rid, content }),
+    });
+  }, []);
 
   useEffect(() => {
     if (chatRoomId && subscribeTopic) connect();
-    return () => disconnect();
-  }, [chatRoomId, subscribeTopic, connect, disconnect]);
+    return () => disconnectTransportOnly();
+  }, [chatRoomId, subscribeTopic, connect, disconnectTransportOnly]);
 
-  return { messages, setMessages, isConnected, sendMessage, disconnect };
+  return {
+    messages,
+    setMessages,
+    setMessagesFromHistory,
+    resetMessages,
+    isConnected,
+    sendMessage,
+    disconnect: disconnectTransportOnly,
+  };
 }

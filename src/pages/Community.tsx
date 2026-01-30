@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageCircle, X, Send, Flag, MoreVertical, Loader2 } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Flag,
+  MoreVertical,
+  Loader2,
+} from "lucide-react";
 import {
   enterChatRoom,
   getChatHistory,
@@ -42,7 +49,7 @@ export const Community = () => {
   const [subscribeTopic, setSubscribeTopic] = useState<string | null>(null);
 
   const [inputValue, setInputValue] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingEnter, setIsLoadingEnter] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const [reportingMessageId, setReportingMessageId] = useState<number | null>(null);
@@ -59,50 +66,90 @@ export const Community = () => {
   const [reportTargetMessageId, setReportTargetMessageId] = useState<number | null>(null);
   const [selectedReason, setSelectedReason] = useState<ReportReasonValue | null>(null);
 
-  const { messages, setMessages, isConnected, sendMessage, disconnect } = useChatWebSocket(
-    chatRoomId,
-    subscribeTopic
-  );
+  const {
+    messages,
+    setMessages,
+    setMessagesFromHistory,
+    resetMessages,
+    isConnected,
+    sendMessage,
+    disconnect,
+  } = useChatWebSocket(chatRoomId, subscribeTopic);
 
-  // Enter
-  const handleEnterRoom = useCallback(
-    async (brand: BrandChatRoom) => {
-      setSelectedBrand(brand);
-      setIsLoading(true);
-      setMessages([]);
+  // ✅ 날짜+시간 표시 (ex. 2026.01.30 12:18)
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
 
-      try {
-        const enterRes = await enterChatRoom(brand.id); // { chatRoomId, subscribeTopic }
-        setChatRoomId(enterRes.chatRoomId);
-        setSubscribeTopic(enterRes.subscribeTopic);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
 
-        const history = await getChatHistory(enterRes.chatRoomId);
-        // ✅ 서버가 과거 -> 최신 순서로 주는지, 최신 -> 과거인지에 따라 reverse 여부 결정
-        // 기존 코드 흐름 유지: reverse해서 오래된 것부터 보이게
-        setMessages(history.messages.reverse());
-        setHasMore(history.hasNext);
-        setNextCursor(history.nextCursorMessageId);
-      } catch (e) {
-        console.error("Failed to enter chat room:", e);
-        alert("채팅방 입장에 실패했습니다.");
-        setSelectedBrand(null);
-        setChatRoomId(null);
-        setSubscribeTopic(null);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [setMessages]
-  );
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mi = String(date.getMinutes()).padStart(2, "0");
+
+    return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
+  };
+
+  // (옵션) 닉네임이 실시간 payload에 없다면 fallback 표시
+  const displayName = (msg: ChatMessage) => msg.nickname ?? `User#${msg.userId}`;
+
+  /** =========================
+   *  Enter: 최근 15개만 보여주기
+   *  - 서버는 30개 고정 반환
+   *  - 프론트에서 15개만 slice
+   *  ========================= */
+  const handleEnterRoom = useCallback(async (brand: BrandChatRoom) => {
+    setSelectedBrand(brand);
+    setIsLoadingEnter(true);
+
+    // ✅ 입장 시작 시 UI 상태 초기화
+    resetMessages();
+    setHasMore(true);
+    setNextCursor(null);
+
+    try {
+      const enterRes = await enterChatRoom(brand.id); // { chatRoomId, subscribeTopic }
+      setChatRoomId(enterRes.chatRoomId);
+      setSubscribeTopic(enterRes.subscribeTopic);
+
+      setIsLoadingHistory(true);
+      const history = await getChatHistory(enterRes.chatRoomId);
+
+      // 너 기존 흐름 유지: reverse해서 오래된 것부터 보이게
+      const ordered = [...history.messages].reverse();
+
+      // ✅ 최근 15개만 화면에
+      const last15 = ordered.slice(Math.max(ordered.length - 15, 0));
+      setMessagesFromHistory(last15);
+
+      setHasMore(history.hasNext);
+      setNextCursor(history.nextCursorMessageId);
+    } catch (e) {
+      console.error("Failed to enter chat room:", e);
+      alert("채팅방 입장에 실패했습니다.");
+
+      setSelectedBrand(null);
+      setChatRoomId(null);
+      setSubscribeTopic(null);
+
+      resetMessages();
+      setHasMore(true);
+      setNextCursor(null);
+    } finally {
+      setIsLoadingEnter(false);
+      setIsLoadingHistory(false);
+    }
+  }, [resetMessages, setMessagesFromHistory]);
 
   // Close
   const handleCloseRoom = useCallback(() => {
     disconnect();
+
     setSelectedBrand(null);
     setChatRoomId(null);
     setSubscribeTopic(null);
 
-    setMessages([]);
+    resetMessages();
     setHasMore(true);
     setNextCursor(null);
 
@@ -110,24 +157,49 @@ export const Community = () => {
     setReportTargetMessageId(null);
     setSelectedReason(null);
     setMenuOpenId(null);
-  }, [disconnect, setMessages]);
+  }, [disconnect, resetMessages]);
 
-  // Load more history
+  /** =========================
+   *  Load more history (과거 prepend)
+   *  - cursor param: nextCursorMessageId
+   *  - 서버는 30개 고정 반환
+   *  ========================= */
   const loadMoreHistory = useCallback(async () => {
     if (!chatRoomId || isLoadingHistory || !hasMore || !nextCursor) return;
 
     setIsLoadingHistory(true);
     try {
+      const container = messagesContainerRef.current;
+      const prevScrollHeight = container?.scrollHeight ?? 0;
+
       const history = await getChatHistory(chatRoomId, nextCursor);
-      setMessages((prev) => [...history.messages.reverse(), ...prev]);
+
+      const older = [...history.messages].reverse();
+      setMessages((prev) => [...older, ...prev]);
+
       setHasMore(history.hasNext);
       setNextCursor(history.nextCursorMessageId);
+
+      // 스크롤 위치 보정
+      requestAnimationFrame(() => {
+        if (!container) return;
+        const newScrollHeight = container.scrollHeight;
+        const diff = newScrollHeight - prevScrollHeight;
+        container.scrollTop = container.scrollTop + diff;
+      });
     } catch (e) {
       console.error("Failed to load history:", e);
     } finally {
       setIsLoadingHistory(false);
     }
   }, [chatRoomId, isLoadingHistory, hasMore, nextCursor, setMessages]);
+
+  // Infinite scroll
+  const handleScroll = useCallback(() => {
+    const c = messagesContainerRef.current;
+    if (!c) return;
+    if (c.scrollTop === 0 && hasMore && !isLoadingHistory) loadMoreHistory();
+  }, [hasMore, isLoadingHistory, loadMoreHistory]);
 
   // Send
   const handleSendMessage = useCallback(() => {
@@ -144,13 +216,13 @@ export const Community = () => {
     setReportModalOpen(true);
   }, []);
 
-  // Report submit (✅ 백엔드 DTO에 맞게)
+  // Report submit
   const submitReport = useCallback(async () => {
     if (!reportTargetMessageId || !selectedReason) return;
 
     setReportingMessageId(reportTargetMessageId);
     try {
-      await reportMessage(reportTargetMessageId, selectedReason); // { chatMessageId, reportReason }
+      await reportMessage(reportTargetMessageId, selectedReason);
       alert("메시지가 신고되었습니다.");
       setReportModalOpen(false);
       setReportTargetMessageId(null);
@@ -163,26 +235,10 @@ export const Community = () => {
     }
   }, [reportTargetMessageId, selectedReason]);
 
-  // Scroll bottom
+  // Scroll bottom (실시간 수신 시)
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Infinite scroll
-  const handleScroll = useCallback(() => {
-    const c = messagesContainerRef.current;
-    if (!c) return;
-    if (c.scrollTop === 0 && hasMore && !isLoadingHistory) loadMoreHistory();
-  }, [hasMore, isLoadingHistory, loadMoreHistory]);
-
-  // Time
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
-  };
-
-  // (옵션) 닉네임이 실시간 payload에 없다면 fallback 표시
-  const displayName = (msg: ChatMessage) => msg.nickname ?? `User#${msg.userId}`;
+  }, [messages.length]);
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] pt-[120px] pb-24 px-6 lg:px-10">
@@ -212,10 +268,10 @@ export const Community = () => {
                 <h3 className="text-base font-bold text-[#333]">{room.brand}</h3>
                 <button
                   onClick={() => handleEnterRoom(room)}
-                  disabled={isLoading && selectedBrand?.id === room.id}
+                  disabled={isLoadingEnter && selectedBrand?.id === room.id}
                   className="w-full py-2.5 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoading && selectedBrand?.id === room.id ? (
+                  {isLoadingEnter && selectedBrand?.id === room.id ? (
                     <Loader2 size={16} className="animate-spin mx-auto" />
                   ) : (
                     "입장하기"
@@ -252,14 +308,18 @@ export const Community = () => {
               </button>
             </div>
 
-            <div ref={messagesContainerRef} onScroll={handleScroll} className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto p-5 space-y-4"
+            >
               {isLoadingHistory && (
                 <div className="flex justify-center py-2">
                   <Loader2 size={20} className="animate-spin text-gray-400" />
                 </div>
               )}
 
-              {isLoading ? (
+              {isLoadingEnter ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 size={32} className="animate-spin text-gray-400" />
                 </div>
@@ -279,7 +339,8 @@ export const Community = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm font-semibold text-[#333]">{displayName(msg)}</span>
-                        <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
+                        {/* ✅ 날짜+시간 표시 */}
+                        <span className="text-xs text-gray-400">{formatDateTime(msg.createdAt)}</span>
                       </div>
 
                       <div className="flex items-start gap-2">
@@ -397,11 +458,7 @@ export const Community = () => {
 
               <button
                 onClick={submitReport}
-                disabled={
-                  !reportTargetMessageId ||
-                  !selectedReason ||
-                  reportingMessageId === reportTargetMessageId
-                }
+                disabled={!reportTargetMessageId || !selectedReason || reportingMessageId === reportTargetMessageId}
                 className="px-3 py-2 text-sm rounded-xl bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {reportingMessageId === reportTargetMessageId ? "신고 중..." : "신고하기"}
