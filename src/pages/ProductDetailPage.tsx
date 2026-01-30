@@ -423,9 +423,8 @@ export const ProductDetailPage = () => {
                                             ) : (
                                                 <button
                                                     onClick={() => {
-                                                        const selectedProduct = product.products.find(p => getSizeFromOptions(p.options) === selectedSize);
-                                                        if (selectedProduct) {
-                                                            navigate(`/${modalMode === 'buy' ? 'purchase' : 'sales'}/${selectedProduct.productId}`);
+                                                        if (selectedSize) {
+                                                            navigate(`/products/${id}/${modalMode === 'buy' ? 'bid' : 'sell'}?size=${selectedSize}`);
                                                         }
                                                     }}
                                                     className="w-full h-14 rounded-xl bg-accent text-white font-bold text-lg"
