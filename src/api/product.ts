@@ -141,3 +141,25 @@ export const deleteBrand = async (brandId: number) => {
 
 };
 
+// --- 카테고리 관리 API ---
+
+// 카테고리 생성
+export const createCategory = async (categoryData: { name: string; imageUrl?: string }) => {
+    // API는 배열을 받으므로 배열로 감싸서 전송
+    const response = await axiosInstance.post('/api/v1/products/categories', {
+        categories: [categoryData]
+    });
+    return response.data;
+};
+
+// 카테고리 수정
+export const updateCategory = async (categoryId: number, categoryData: { name: string; imageUrl: string }) => {
+    const response = await axiosInstance.put(`/api/v1/products/categories/${categoryId}`, categoryData);
+    return response.data;
+};
+
+// 카테고리 삭제
+export const deleteCategory = async (categoryId: number) => {
+    const response = await axiosInstance.delete(`/api/v1/products/categories/${categoryId}`);
+    return response.data;
+};

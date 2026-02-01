@@ -17,6 +17,7 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { AdminSettlement } from './pages/admin/AdminSettlement';
 import { AdminProductManagement } from "./pages/admin/AdminProductManagement";
 import { AdminBrandManagement } from "./pages/admin/AdminBrandManagement";
+import { AdminCategoryManagement } from "./pages/admin/AdminCategoryManagement";
 import { SettlementList } from './pages/SettlementList';
 import { SettlementDetail } from './pages/SettlementDetail';
 import { ErrorPage } from './pages/ErrorPage';
@@ -50,6 +51,7 @@ function App() {
           <Route path="/admin/settlement" element={<AdminSettlement />} />
           <Route path="/admin/products/manage" element={<AdminProductManagement />} />
           <Route path="/admin/brands/manage" element={<AdminBrandManagement />} />
+          <Route path="/admin/categories/manage" element={<AdminCategoryManagement />} />
           <Route path="/error" element={<ErrorPage />} />
           <Route path="*" element={<ErrorPage />} />
         </Route>
