@@ -86,7 +86,58 @@ export const updateProduct = async (productInfoId: number, productData: ProductU
 };
 
 // 상품 옵션 목록 조회
+
 export const getOptions = async (): Promise<OptionGroupResponse[]> => {
+
     const response = await axiosInstance.get('/api/v1/products/options')
+
     return response.data.data;
+
 }
+
+
+
+// --- 브랜드 관리 API ---
+
+
+
+// 브랜드 생성
+
+export const createBrand = async (brandData: { name: string; logoUrl?: string }) => {
+
+    // API는 배열을 받으므로 배열로 감싸서 전송
+
+    const response = await axiosInstance.post('/api/v1/products/brands', {
+
+        brands: [brandData]
+
+    });
+
+    return response.data;
+
+};
+
+
+
+// 브랜드 수정
+
+export const updateBrand = async (brandId: number, brandData: { name: string; imageUrl: string }) => {
+
+    const response = await axiosInstance.put(`/api/v1/products/brands/${brandId}`, brandData);
+
+    return response.data;
+
+};
+
+
+
+// 브랜드 삭제
+
+export const deleteBrand = async (brandId: number) => {
+
+    const response = await axiosInstance.delete(`/api/v1/products/brands/${brandId}`);
+
+    return response.data;
+
+};
+
