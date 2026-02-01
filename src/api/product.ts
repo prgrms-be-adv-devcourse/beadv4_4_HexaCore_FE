@@ -88,12 +88,22 @@ export const updateProduct = async (productInfoId: number, productData: ProductU
 // 상품 옵션 목록 조회
 
 export const getOptions = async (): Promise<OptionGroupResponse[]> => {
+    const response = await axiosInstance.get('/api/v1/products/options');
+    const optionsData = response.data.data.options; 
 
-    const response = await axiosInstance.get('/api/v1/products/options')
+    if (!Array.isArray(optionsData)) {
+        return []; 
+    }
 
-    return response.data.data;
-
-}
+    return optionsData.map((item: any) => ({
+        id: item.group.id,
+        name: item.group.name,
+        optionValues: item.values.map((v: any) => ({
+            id: v.id,
+            value: v.name, 
+        })),
+    }));
+};
 
 
 
@@ -161,5 +171,54 @@ export const updateCategory = async (categoryId: number, categoryData: { name: s
 // 카테고리 삭제
 export const deleteCategory = async (categoryId: number) => {
     const response = await axiosInstance.delete(`/api/v1/products/categories/${categoryId}`);
+    return response.data;
+};
+
+// --- 상품 옵션 관리 API ---
+
+// 옵션 그룹 및 포함된 값 생성 (POST /api/v1/products/options)
+export const createOptionGroup = async (data: { name: string; optionValues: string[] }) => {
+    // OptionCreateRequestDto: { options: [ { group, values } ] }
+    const payload = {
+        options: [{
+            group: data.name,
+            values: data.optionValues
+        }]
+    };
+    const response = await axiosInstance.post('/api/v1/products/options', payload);
+    return response.data;
+};
+
+// 옵션 그룹 이름 수정 (PUT /api/v1/products/options/groups/{optionGroupId})
+export const updateOptionGroupName = async (optionGroupId: number, data: { name: string }) => {
+    // OptionGroupModifyRequestDto: { name }
+    const response = await axiosInstance.put(`/api/v1/products/options/groups/${optionGroupId}`, data);
+    return response.data;
+};
+
+// 옵션 그룹 삭제 (DELETE /api/v1/products/options/groups/{optionGroupId})
+export const deleteOptionGroup = async (optionGroupId: number) => {
+    const response = await axiosInstance.delete(`/api/v1/products/options/groups/${optionGroupId}`);
+    return response.data;
+};
+
+// 기존 옵션 그룹에 값 추가 (POST /api/v1/products/options/{optionGroupId})
+export const appendOptionValues = async (optionGroupId: number, data: { optionValues: string[] }) => {
+    // OptionAppendRequestDto: { values }
+    const payload = { values: data.optionValues };
+    const response = await axiosInstance.post(`/api/v1/products/options/${optionGroupId}`, payload);
+    return response.data;
+};
+
+// 옵션 값 수정 (PUT /api/v1/products/options/values/{optionValueId})
+export const updateOptionValue = async (optionValueId: number, data: { optionGroupId: number; name: string }) => {
+    // OptionValueModifyRequestDto: { optionGroupId, name }
+    const response = await axiosInstance.put(`/api/v1/products/options/values/${optionValueId}`, data);
+    return response.data;
+};
+
+// 옵션 값 삭제 (DELETE /api/v1/products/options/values/{optionValueId})
+export const deleteOptionValue = async (optionValueId: number) => {
+    const response = await axiosInstance.delete(`/api/v1/products/options/values/${optionValueId}`);
     return response.data;
 };
