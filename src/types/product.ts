@@ -57,11 +57,13 @@ export interface ProductListResponse {
 export interface CategoryResponse {
     categoryId: number;
     name: string;
+    imageUrl?: string;
 }
 
 export interface BrandResponse {
     brandId: number;
     name: string;
+    logoUrl?: string;
 }
 
 // 공통 PageResponse 타입 (settlement.ts에서 가져옴)

@@ -131,7 +131,7 @@ export const createBrand = async (brandData: { name: string; logoUrl?: string })
 
 // 브랜드 수정
 
-export const updateBrand = async (brandId: number, brandData: { name: string; imageUrl: string }) => {
+export const updateBrand = async (brandId: number, brandData: { name: string; logoUrl?: string }) => {
 
     const response = await axiosInstance.put(`/api/v1/products/brands/${brandId}`, brandData);
 
@@ -163,7 +163,7 @@ export const createCategory = async (categoryData: { name: string; imageUrl?: st
 };
 
 // 카테고리 수정
-export const updateCategory = async (categoryId: number, categoryData: { name: string; imageUrl: string }) => {
+export const updateCategory = async (categoryId: number, categoryData: { name: string; imageUrl?: string }) => {
     const response = await axiosInstance.put(`/api/v1/products/categories/${categoryId}`, categoryData);
     return response.data;
 };

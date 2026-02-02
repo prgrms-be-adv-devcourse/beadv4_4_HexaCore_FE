@@ -94,7 +94,7 @@ export const AdminBrandManagement = () => {
         try {
             if (selectedBrand) {
                 // Update
-                await updateBrand(selectedBrand.brandId, { name: formData.name, imageUrl: formData.logoUrl });
+                await updateBrand(selectedBrand.brandId, { name: formData.name, logoUrl: formData.logoUrl });
                 alert('브랜드가 수정되었습니다.');
             } else {
                 // Create
