@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getToken } from "firebase/messaging";
+import { getToken, onMessage } from "firebase/messaging";
 import { messaging } from "../firebase";
 import { useAuthStore } from "../store/authStore";
 import { updateFcmToken } from "../api/user";
@@ -9,38 +9,56 @@ export const useFcm = () => {
 
     useEffect(() => {
         const handleFcmToken = async () => {
-            if (!isAuthenticated) return;
+            if (!isAuthenticated) {
+                // 로그아웃 시 토큰 정리
+                localStorage.removeItem("fcmToken");
+                return;
+            }
 
             try {
                 const permission = await Notification.requestPermission();
-                if (permission === "granted") {
-                    // VAPID key is optional if using default setup, but good to have if needed. 
-                    // For now, simple getToken() might work if service worker is set up correctly (firebase-messaging-sw.js).
-                    // However, user didn't provide VAPID key, so we'll try without or with a placeholder if needed later.
-                    // Getting token
-                    const currentToken = await getToken(messaging);
+                if (permission !== "granted") {
+                    console.log("Notification permission not granted.");
+                    return;
+                }
 
-                    if (currentToken) {
-                        console.log("FCM Token:", currentToken);
-                        const storedToken = localStorage.getItem("fcmToken");
+                const currentToken = await getToken(messaging);
 
-                        if (currentToken !== storedToken) {
-                            // Token changed or new, update backend
-                            await updateFcmToken(currentToken);
-                            localStorage.setItem("fcmToken", currentToken);
-                            console.log("FCM Token updated");
-                        }
-                    } else {
-                        console.log('No registration token available. Request permission to generate one.');
+                if (currentToken) {
+                    console.log("FCM Token:", currentToken);
+
+                    const storedToken = localStorage.getItem("fcmToken");
+
+                    if (currentToken !== storedToken) {
+                        await updateFcmToken(currentToken);
+                        localStorage.setItem("fcmToken", currentToken);
+                        console.log("FCM Token updated on server");
                     }
                 } else {
-                    console.log("Notification permission not granted.");
+                    console.log('No registration token available.');
                 }
             } catch (error) {
-                console.error("An error occurred while retrieving token. ", error);
+                console.error("Error retrieving FCM token:", error);
             }
         };
 
         handleFcmToken();
+
+        // 포그라운드 메시지 수신 리스너
+        const unsubscribeMessage = onMessage(messaging, (payload) => {
+            console.log('Foreground message received:', payload);
+
+            // 알림 표시 (브라우저가 포커스된 상태에서)
+            if (payload.notification) {
+                new Notification(payload.notification.title || '알림', {
+                    body: payload.notification.body,
+                    icon: payload.notification.icon || '/logo.png',
+                });
+            }
+        });
+
+        return () => {
+            unsubscribeMessage();
+        };
     }, [isAuthenticated]);
 };

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell } from 'lucide-react';
-import { updateNotificationSettings } from '../api/user';
+import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell, Trash2 } from 'lucide-react';
+import { updateNotificationSettings, getNotificationSettings } from '../api/user';
+import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
 
 /* Mock Data for Transactions */
 const TRANSACTIONS = [
@@ -355,7 +356,10 @@ export const MyPage = () => {
                             </section>
                         )}
                         {activeTab === 'notification' && (
-                            <NotificationSettings />
+                            <div className="space-y-6">
+                                <NotificationSettings />
+                                <PriceAlertList />
+                            </div>
                         )}
                     </main>
                 </div>
@@ -373,6 +377,29 @@ const NotificationSettings = () => {
         settlementEnabled: false,
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const data = await getNotificationSettings();
+
+                // snake_case 대응 및 boolean 변환
+                const safeData: any = data;
+                setSettings({
+                    bidStatusEnabled: !!(safeData.bidStatusEnabled ?? safeData.bid_status_enabled),
+                    productStatusEnabled: !!(safeData.productStatusEnabled ?? safeData.product_status_enabled),
+                    priceEnabled: !!(safeData.priceEnabled ?? safeData.price_enabled),
+                    settlementEnabled: !!(safeData.settlementEnabled ?? safeData.settlement_enabled),
+                });
+            } catch (error) {
+                console.error("Failed to fetch notification settings:", error);
+            } finally {
+                setIsInitialLoading(false);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const handleToggle = (key: keyof typeof settings) => {
         setSettings(prev => ({
@@ -398,67 +425,157 @@ const NotificationSettings = () => {
         <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
             <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">알림 설정</h3>
 
-            <div className="max-w-[480px] mx-auto space-y-8 py-4">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-bold text-[#333] mb-1">입찰 알림</div>
-                        <div className="text-xs text-gray-400">입찰 상태 변경 시 알림을 받습니다.</div>
+            {isInitialLoading ? (
+                // 데이터 로딩 전에는 투명한/빈 화면을 보여주어 깜빡임 방지
+                <div className="h-[400px] flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                </div>
+            ) : (
+                <div className="max-w-[480px] mx-auto space-y-8 py-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-bold text-[#333] mb-1">입찰 알림</div>
+                            <div className="text-xs text-gray-400">입찰 상태 변경 시 알림을 받습니다.</div>
+                        </div>
+                        <button
+                            onClick={() => handleToggle('bidStatusEnabled')}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${settings.bidStatusEnabled ? 'bg-accent' : 'bg-gray-200'}`}
+                        >
+                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.bidStatusEnabled ? 'left-[26px]' : 'left-0.5'}`} />
+                        </button>
                     </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-bold text-[#333] mb-1">상품 알림</div>
+                            <div className="text-xs text-gray-400">관심 상품의 정보를 알림으로 받습니다.</div>
+                        </div>
+                        <button
+                            onClick={() => handleToggle('productStatusEnabled')}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${settings.productStatusEnabled ? 'bg-accent' : 'bg-gray-200'}`}
+                        >
+                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.productStatusEnabled ? 'left-[26px]' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-bold text-[#333] mb-1">가격 알림</div>
+                            <div className="text-xs text-gray-400">설정한 가격 도달 시 알림을 받습니다.</div>
+                        </div>
+                        <button
+                            onClick={() => handleToggle('priceEnabled')}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${settings.priceEnabled ? 'bg-accent' : 'bg-gray-200'}`}
+                        >
+                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.priceEnabled ? 'left-[26px]' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-bold text-[#333] mb-1">정산 알림</div>
+                            <div className="text-xs text-gray-400">정산 완료 시 알림을 받습니다.</div>
+                        </div>
+                        <button
+                            onClick={() => handleToggle('settlementEnabled')}
+                            className={`w-12 h-6 rounded-full transition-colors relative ${settings.settlementEnabled ? 'bg-accent' : 'bg-gray-200'}`}
+                        >
+                            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.settlementEnabled ? 'left-[26px]' : 'left-0.5'}`} />
+                        </button>
+                    </div>
+
                     <button
-                        onClick={() => handleToggle('bidStatusEnabled')}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.bidStatusEnabled ? 'bg-accent' : 'bg-gray-200'}`}
+                        onClick={handleSave}
+                        disabled={isLoading}
+                        className="w-full bg-accent text-white py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5 mt-8 disabled:opacity-50"
                     >
-                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.bidStatusEnabled ? 'left-[26px]' : 'left-0.5'}`} />
+                        {isLoading ? '저장 중...' : '설정 저장'}
                     </button>
                 </div>
+            )}
+        </section>
+    );
+};
 
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-bold text-[#333] mb-1">상품 알림</div>
-                        <div className="text-xs text-gray-400">관심 상품의 정보를 알림으로 받습니다.</div>
-                    </div>
-                    <button
-                        onClick={() => handleToggle('productStatusEnabled')}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.productStatusEnabled ? 'bg-accent' : 'bg-gray-200'}`}
-                    >
-                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.productStatusEnabled ? 'left-[26px]' : 'left-0.5'}`} />
-                    </button>
+const PriceAlertList = () => {
+    const [alerts, setAlerts] = useState<PriceAlertResponseDto[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAlerts = async () => {
+            try {
+                const data = await getPriceAlerts();
+                const alertList = Array.isArray(data) ? data : [];
+                setAlerts(alertList);
+            } catch (error) {
+                console.error("Failed to fetch price alerts:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAlerts();
+    }, []);
+
+    const handleDelete = async (alertId: number) => {
+        if (!window.confirm("정말 이 알림을 삭제하시겠습니까?")) return;
+
+        try {
+            await deletePriceAlert(alertId);
+            setAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
+        } catch (error) {
+            console.error("Failed to delete price alert:", error);
+            alert("알림 삭제에 실패했습니다.");
+        }
+    };
+
+    if (isLoading) {
+        return (
+            <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+                <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">가격 알림 목록</h3>
+                <div className="flex justify-center py-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
                 </div>
+            </section>
+        );
+    }
 
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-bold text-[#333] mb-1">가격 알림</div>
-                        <div className="text-xs text-gray-400">설정한 가격 도달 시 알림을 받습니다.</div>
-                    </div>
-                    <button
-                        onClick={() => handleToggle('priceEnabled')}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.priceEnabled ? 'bg-accent' : 'bg-gray-200'}`}
-                    >
-                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.priceEnabled ? 'left-[26px]' : 'left-0.5'}`} />
-                    </button>
+    return (
+        <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
+            <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">가격 알림 목록</h3>
+
+            {alerts.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                    설정된 가격 알림이 없습니다.
                 </div>
-
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="font-bold text-[#333] mb-1">정산 알림</div>
-                        <div className="text-xs text-gray-400">정산 완료 시 알림을 받습니다.</div>
-                    </div>
-                    <button
-                        onClick={() => handleToggle('settlementEnabled')}
-                        className={`w-12 h-6 rounded-full transition-colors relative ${settings.settlementEnabled ? 'bg-accent' : 'bg-gray-200'}`}
-                    >
-                        <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${settings.settlementEnabled ? 'left-[26px]' : 'left-0.5'}`} />
-                    </button>
+            ) : (
+                <div className="space-y-4">
+                    {alerts.map((alert) => (
+                        <div key={alert.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl transition-all hover:bg-gray-50 bg-white">
+                            <div className="flex items-center gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 p-1 overflow-hidden flex items-center justify-center">
+                                    <ShoppingBag className="text-gray-300" size={24} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-[#333]">상품 ID: {alert.productId}</h4>
+                                    <div className="text-sm text-gray-400 mt-1">
+                                        목표 가격: <span className="font-bold text-accent">{alert.targetPrice.toLocaleString()}원</span>
+                                    </div>
+                                    <div className="text-xs text-gray-300 mt-1">
+                                        등록일: {new Date(alert.createdAt).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleDelete(alert.id)}
+                                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                aria-label="알림 삭제"
+                            >
+                                <Trash2 size={20} />
+                            </button>
+                        </div>
+                    ))}
                 </div>
-
-                <button
-                    onClick={handleSave}
-                    disabled={isLoading}
-                    className="w-full bg-accent text-white py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5 mt-8 disabled:opacity-50"
-                >
-                    {isLoading ? '저장 중...' : '설정 저장'}
-                </button>
-            </div>
+            )}
         </section>
     );
 };
