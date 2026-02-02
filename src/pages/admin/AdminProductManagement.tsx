@@ -211,15 +211,56 @@ export const AdminProductManagement = () => {
         }));
     };
 
-    const toggleOptionValue = (variantIndex: number, optionValueId: number) => {
-        const newVariants = [...formData.variants];
-        const currentOptions = newVariants[variantIndex].optionValueIds;
-        if (currentOptions.includes(optionValueId)) {
-            newVariants[variantIndex].optionValueIds = currentOptions.filter(id => id !== optionValueId);
-        } else {
-            newVariants[variantIndex].optionValueIds.push(optionValueId);
-        }
-        setFormData(prev => ({ ...prev, variants: newVariants }));
+    const toggleOptionValue = (variantIndex: number, selectedOptionValueId: number) => {
+        setFormData(prev => {
+            const newVariants = [...prev.variants];
+            const currentVariant = { ...newVariants[variantIndex] };
+            let updatedOptionValueIds = [...currentVariant.optionValueIds];
+
+            // 1. Find the group of the selected option value
+            let selectedOptionGroupId: number | undefined;
+            for (const group of groupedOptions) {
+                if (group.optionValues.some(ov => ov.id === selectedOptionValueId)) {
+                    selectedOptionGroupId = group.id;
+                    break;
+                }
+            }
+
+            if (selectedOptionGroupId === undefined) {
+                console.warn(`OptionValueId ${selectedOptionValueId} not found in any group.`);
+                return prev; // Should not happen if data is consistent
+            }
+
+            // 2. Filter out any existing optionValueIds from the same group
+            //    To do this, we need to know the group of each existing optionValueId.
+            updatedOptionValueIds = updatedOptionValueIds.filter(existingId => {
+                let existingOptionGroupId: number | undefined;
+                for (const group of groupedOptions) {
+                    if (group.optionValues.some(ov => ov.id === existingId)) {
+                        existingOptionGroupId = group.id;
+                        break;
+                    }
+                }
+                // Keep only options that are not from the same group as the selected one
+                return existingOptionGroupId !== selectedOptionGroupId;
+            });
+
+            // 3. Add or remove the selected optionValueId (toggling)
+            if (updatedOptionValueIds.includes(selectedOptionValueId)) {
+                // If it was already in the filtered list (meaning it was the only one from its group), remove it (unselect)
+                updatedOptionValueIds = updatedOptionValueIds.filter(id => id !== selectedOptionValueId);
+            } else {
+                // Otherwise, add it (select)
+                updatedOptionValueIds.push(selectedOptionValueId);
+            }
+
+            newVariants[variantIndex] = {
+                ...currentVariant,
+                optionValueIds: updatedOptionValueIds,
+            };
+
+            return { ...prev, variants: newVariants };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
