@@ -27,6 +27,7 @@ import { ErrorPage } from './pages/ErrorPage';
 
 
 import { useFcm } from './hooks/useFcm';
+import {AdminProductList} from "./pages/admin/AdminProductList.tsx";
 
 function App() {
   useFcm();
@@ -59,9 +60,9 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="settlement" element={<AdminSettlement />} />
-          <Route path="products" element={<AdminProductManagement />} />
-          <Route path="products/new" element={<AdminProductManagement />} />
-          <Route path="products/:productInfoId" element={<AdminProductManagement />} />
+          <Route path="products" element={<AdminProductList />} />
+          <Route path="product/" element={<AdminProductManagement />} />
+          <Route path="product/:productInfoId" element={<AdminProductManagement />} />
           <Route path="brands" element={<AdminBrandManagement />} />
           <Route path="categories" element={<AdminCategoryManagement />} />
           <Route path="options" element={<AdminOptionManagement />} />
