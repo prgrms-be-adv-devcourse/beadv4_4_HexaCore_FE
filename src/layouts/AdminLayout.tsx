@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface NavItemType {
+    path?: string;
     label: string;
     exact?: boolean;
     children?: NavItemType[];
