@@ -132,7 +132,7 @@ export const AdminDashboard = () => {
                 </button>
 
                 <button
-                    onClick={() => navigate('/admin/products/new')}
+                    onClick={() => navigate('/admin/product')}
                     className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all text-left group"
                 >
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
