@@ -13,6 +13,7 @@ import {
   enterChatRoom,
   getChatHistory,
   reportMessage,
+  deleteMessage,
   useChatWebSocket,
   type ChatMessage,
 } from "../hooks/use-chat";
@@ -48,11 +49,15 @@ export const Community = () => {
   const [chatRoomId, setChatRoomId] = useState<number | null>(null);
   const [subscribeTopic, setSubscribeTopic] = useState<string | null>(null);
 
+  // ✅ enter에서 내려주는 "내 userId"
+  const [myUserId, setMyUserId] = useState<number | null>(null);
+
   const [inputValue, setInputValue] = useState("");
   const [isLoadingEnter, setIsLoadingEnter] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   const [reportingMessageId, setReportingMessageId] = useState<number | null>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<number | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
 
   const [hasMore, setHasMore] = useState(true);
@@ -74,6 +79,7 @@ export const Community = () => {
     isConnected,
     sendMessage,
     disconnect,
+    updateMessageStatus, // ✅ A안 (상태만 변경)
   } = useChatWebSocket(chatRoomId, subscribeTopic);
 
   // ✅ 날짜+시간 표시 (ex. 2026.01.30 12:18)
@@ -90,35 +96,33 @@ export const Community = () => {
     return `${yyyy}.${mm}.${dd} ${hh}:${mi}`;
   };
 
-  // (옵션) 닉네임이 실시간 payload에 없다면 fallback 표시
   const displayName = (msg: ChatMessage) => msg.nickname ?? `User#${msg.userId}`;
 
   /** =========================
    *  Enter: 최근 15개만 보여주기
-   *  - 서버는 30개 고정 반환
-   *  - 프론트에서 15개만 slice
    *  ========================= */
   const handleEnterRoom = useCallback(async (brand: BrandChatRoom) => {
     setSelectedBrand(brand);
     setIsLoadingEnter(true);
 
-    // ✅ 입장 시작 시 UI 상태 초기화
+    // ✅ 초기화
     resetMessages();
     setHasMore(true);
     setNextCursor(null);
+    setMyUserId(null);
 
     try {
-      const enterRes = await enterChatRoom(brand.id); // { chatRoomId, subscribeTopic }
+      const enterRes = await enterChatRoom(brand.id);
       setChatRoomId(enterRes.chatRoomId);
       setSubscribeTopic(enterRes.subscribeTopic);
+
+      // ✅ 내 userId 저장 (로그인 코드 안 건드려도 됨)
+      setMyUserId(enterRes.userId);
 
       setIsLoadingHistory(true);
       const history = await getChatHistory(enterRes.chatRoomId);
 
-      // 너 기존 흐름 유지: reverse해서 오래된 것부터 보이게
       const ordered = [...history.messages].reverse();
-
-      // ✅ 최근 15개만 화면에
       const last15 = ordered.slice(Math.max(ordered.length - 15, 0));
       setMessagesFromHistory(last15);
 
@@ -131,6 +135,7 @@ export const Community = () => {
       setSelectedBrand(null);
       setChatRoomId(null);
       setSubscribeTopic(null);
+      setMyUserId(null);
 
       resetMessages();
       setHasMore(true);
@@ -141,13 +146,13 @@ export const Community = () => {
     }
   }, [resetMessages, setMessagesFromHistory]);
 
-  // Close
   const handleCloseRoom = useCallback(() => {
     disconnect();
 
     setSelectedBrand(null);
     setChatRoomId(null);
     setSubscribeTopic(null);
+    setMyUserId(null);
 
     resetMessages();
     setHasMore(true);
@@ -160,9 +165,7 @@ export const Community = () => {
   }, [disconnect, resetMessages]);
 
   /** =========================
-   *  Load more history (과거 prepend)
-   *  - cursor param: nextCursorMessageId
-   *  - 서버는 30개 고정 반환
+   *  Load more history
    *  ========================= */
   const loadMoreHistory = useCallback(async () => {
     if (!chatRoomId || isLoadingHistory || !hasMore || !nextCursor) return;
@@ -180,7 +183,6 @@ export const Community = () => {
       setHasMore(history.hasNext);
       setNextCursor(history.nextCursorMessageId);
 
-      // 스크롤 위치 보정
       requestAnimationFrame(() => {
         if (!container) return;
         const newScrollHeight = container.scrollHeight;
@@ -194,21 +196,18 @@ export const Community = () => {
     }
   }, [chatRoomId, isLoadingHistory, hasMore, nextCursor, setMessages]);
 
-  // Infinite scroll
   const handleScroll = useCallback(() => {
     const c = messagesContainerRef.current;
     if (!c) return;
     if (c.scrollTop === 0 && hasMore && !isLoadingHistory) loadMoreHistory();
   }, [hasMore, isLoadingHistory, loadMoreHistory]);
 
-  // Send
   const handleSendMessage = useCallback(() => {
     if (!inputValue.trim() || !isConnected) return;
     sendMessage(inputValue.trim());
     setInputValue("");
   }, [inputValue, isConnected, sendMessage]);
 
-  // Report modal open
   const openReportModal = useCallback((messageId: number) => {
     setMenuOpenId(null);
     setReportTargetMessageId(messageId);
@@ -216,7 +215,6 @@ export const Community = () => {
     setReportModalOpen(true);
   }, []);
 
-  // Report submit
   const submitReport = useCallback(async () => {
     if (!reportTargetMessageId || !selectedReason) return;
 
@@ -234,6 +232,23 @@ export const Community = () => {
       setReportingMessageId(null);
     }
   }, [reportTargetMessageId, selectedReason]);
+
+  // ✅ 내 메시지 삭제
+  const handleDeleteMessage = useCallback(async (messageId: number) => {
+    setMenuOpenId(null);
+    setDeletingMessageId(messageId);
+
+    try {
+      await deleteMessage(messageId);
+      // A안: 상태만 변경 → UI에서 문구 치환
+      updateMessageStatus(messageId, "DELETED");
+    } catch (e) {
+      console.error("Failed to delete message:", e);
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeletingMessageId(null);
+    }
+  }, [updateMessageStatus]);
 
   // Scroll bottom (실시간 수신 시)
   useEffect(() => {
@@ -330,53 +345,96 @@ export const Community = () => {
                   <p className="text-xs">첫 메시지를 보내보세요!</p>
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <div key={msg.messageId} className="flex gap-3 group">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">
-                      {displayName(msg)[0]?.toUpperCase() ?? "U"}
-                    </div>
+                messages.map((msg) => {
+                  const isMine = myUserId !== null && msg.userId === myUserId;
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-semibold text-[#333]">{displayName(msg)}</span>
-                        {/* ✅ 날짜+시간 표시 */}
-                        <span className="text-xs text-gray-400">{formatDateTime(msg.createdAt)}</span>
-                      </div>
+                  // ✅ A안: 상태에 따라 화면에서만 문구 치환
+                  const isDeleted = msg.messageStatus === "DELETED";
+                  const isBlinded = msg.messageStatus === "BLINDED";
 
-                      <div className="flex items-start gap-2">
-                        <p className="text-sm text-[#555] bg-gray-50 rounded-xl px-3 py-2 inline-block break-words">
-                          {msg.isBlinded ? "블라인드된 메시지입니다." : msg.content}
-                        </p>
+                  const displayContent = isDeleted
+                    ? "삭제된 메시지입니다."
+                    : isBlinded
+                      ? "블라인드된 메시지입니다."
+                      : msg.content;
 
-                        <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => setMenuOpenId(menuOpenId === msg.messageId ? null : msg.messageId)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                          >
-                            <MoreVertical size={14} className="text-gray-400" />
-                          </button>
+                  return (
+                    <div
+                      key={msg.messageId}
+                      className={`flex gap-3 group ${isMine ? "justify-end" : ""}`}
+                    >
+                      {!isMine && (
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">
+                          {displayName(msg)[0]?.toUpperCase() ?? "U"}
+                        </div>
+                      )}
 
-                          {menuOpenId === msg.messageId && (
-                            <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-max">
-                              <button
-                                onClick={() => openReportModal(msg.messageId)}
-                                disabled={reportingMessageId === msg.messageId}
-                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-gray-50 whitespace-nowrap disabled:opacity-50"
-                              >
-                                {reportingMessageId === msg.messageId ? (
-                                  <Loader2 size={14} className="animate-spin" />
-                                ) : (
-                                  <Flag size={14} />
-                                )}
-                                신고하기
-                              </button>
-                            </div>
+                      <div className={`min-w-0 ${isMine ? "max-w-[80%] flex flex-col items-end" : "flex-1"}`}>
+                        <div className={`flex items-center gap-2 mb-1 ${isMine ? "justify-end" : ""}`}>
+                          {!isMine && (
+                            <span className="text-sm font-semibold text-[#333]">{displayName(msg)}</span>
                           )}
+                          <span className="text-xs text-gray-400">{formatDateTime(msg.createdAt)}</span>
+                        </div>
+
+                        <div className={`flex items-start gap-2 ${isMine ? "flex-row-reverse" : ""}`}>
+                          <p
+                            className={[
+                              "text-sm rounded-xl px-3 py-2 inline-block break-words",
+                              isMine ? "bg-black text-white" : "bg-gray-50 text-[#555]",
+                              (isDeleted || isBlinded) ? "opacity-80 italic" : "",
+                            ].join(" ")}
+                          >
+                            {displayContent}
+                          </p>
+
+                          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => setMenuOpenId(menuOpenId === msg.messageId ? null : msg.messageId)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
+                              <MoreVertical size={14} className="text-gray-400" />
+                            </button>
+
+                            {menuOpenId === msg.messageId && (
+                              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10 min-w-max">
+                                {!isMine && (
+                                  <button
+                                    onClick={() => openReportModal(msg.messageId)}
+                                    disabled={reportingMessageId === msg.messageId || isDeleted}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-gray-50 whitespace-nowrap disabled:opacity-50"
+                                  >
+                                    {reportingMessageId === msg.messageId ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <Flag size={14} />
+                                    )}
+                                    신고하기
+                                  </button>
+                                )}
+
+                                {isMine && (
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg.messageId)}
+                                    disabled={deletingMessageId === msg.messageId || isDeleted}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap disabled:opacity-50"
+                                  >
+                                    {deletingMessageId === msg.messageId ? (
+                                      <Loader2 size={14} className="animate-spin" />
+                                    ) : (
+                                      <span className="text-xs font-bold">✕</span>
+                                    )}
+                                    삭제하기
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
 
               <div ref={messagesEndRef} />

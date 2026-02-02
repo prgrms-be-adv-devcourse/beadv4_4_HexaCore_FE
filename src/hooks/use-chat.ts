@@ -8,7 +8,6 @@ import {
   type StompSubscription,
 } from "@stomp/stompjs";
 import SockJS from "sockjs-client/dist/sockjs";
-
 import axiosInstance from "../api/axios";
 
 function resolveWsHttpBaseUrl(): string {
@@ -29,18 +28,22 @@ function resolveWsHttpBaseUrl(): string {
 /** =========================
  *  Types
  *  ========================= */
+
+export type MessageStatus = "NORMAL" | "BLINDED" | "DELETED" | string;
+
 export interface ChatMessage {
   messageId: number;
   userId: number;
   content: string;
-  isBlinded: boolean;
   createdAt: string;
   nickname?: string;
+  messageStatus: MessageStatus;
 }
 
 export interface ChatRoomEnterResponseDto {
   chatRoomId: number;
   subscribeTopic: string;
+  userId: number; // ✅ enter에서 내려주는 내 userId
 }
 
 export interface ChatMessageHistoryResponseDto {
@@ -50,25 +53,53 @@ export interface ChatMessageHistoryResponseDto {
   hasNext: boolean;
 }
 
+// ✅ 서버 WS 이벤트 타입
+export type ChatEventType = "CHAT_MESSAGE" | "MESSAGE_BLINDED" | "MESSAGE_DELETED";
+
+// ✅ 서버 WS 이벤트 payload 타입(명시)
+export type ChatMessageBlindedPayload = {
+  roomId: number;
+  chatMessageId: number;
+  blindedAt: string; // LocalDateTime은 JSON으로 문자열로 옴
+};
+
+export type ChatMessageDeletedPayload = {
+  roomId: number;
+  messageId: number;
+};
+
+// ✅ 서버 WS Envelope 타입
+export type ChatEventEnvelope =
+  | { type: "CHAT_MESSAGE"; data: unknown }
+  | { type: "MESSAGE_BLINDED"; data: ChatMessageBlindedPayload }
+  | { type: "MESSAGE_DELETED"; data: ChatMessageDeletedPayload };
+
 /** =========================
- *  JSON parse
+ *  JSON parse helpers
  *  ========================= */
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
 }
+
 function getNumber(obj: UnknownRecord, key: string): number | undefined {
   const v = obj[key];
   return typeof v === "number" ? v : undefined;
 }
+
 function getString(obj: UnknownRecord, key: string): string | undefined {
   const v = obj[key];
   return typeof v === "string" ? v : undefined;
 }
-function getBoolean(obj: UnknownRecord, key: string): boolean | undefined {
-  const v = obj[key];
-  return typeof v === "boolean" ? v : undefined;
+
+function safeJson(body: string): unknown {
+  try {
+    return JSON.parse(body) as unknown;
+  } catch (e: unknown) {
+    console.error("WS JSON parse error:", e);
+    return null;
+  }
 }
 
 function parseWsChatMessage(payload: unknown): ChatMessage | null {
@@ -78,26 +109,35 @@ function parseWsChatMessage(payload: unknown): ChatMessage | null {
   const userId = getNumber(payload, "userId") ?? getNumber(payload, "senderId");
   const content = getString(payload, "content");
   const createdAt = getString(payload, "createdAt");
-
-  const isBlinded =
-    getBoolean(payload, "isBlinded") ?? getBoolean(payload, "blinded") ?? false;
-
   const nickname = getString(payload, "nickname");
+
+  const messageStatus =
+    getString(payload, "messageStatus") ??
+    getString(payload, "status") ??
+    "NORMAL";
 
   if (messageId === undefined || userId === undefined || !content || !createdAt) {
     return null;
   }
 
-  return { messageId, userId, content, isBlinded, createdAt, nickname };
+  return { messageId, userId, content, createdAt, nickname, messageStatus };
 }
 
-function safeJson(body: string): unknown {
-  try {
-    return JSON.parse(body) as unknown;
-  } catch (e) {
-    console.error("WS JSON parse error:", e);
-    return null;
-  }
+function isEnvelope(raw: unknown): raw is { type: unknown; data: unknown } {
+  return isRecord(raw) && "type" in raw && "data" in raw;
+}
+
+function isBlindedPayload(data: unknown): data is ChatMessageBlindedPayload {
+  if (!isRecord(data)) return false;
+  return typeof data.roomId === "number"
+    && typeof data.chatMessageId === "number"
+    && typeof data.blindedAt === "string";
+}
+
+function isDeletedPayload(data: unknown): data is ChatMessageDeletedPayload {
+  if (!isRecord(data)) return false;
+  return typeof data.roomId === "number"
+    && typeof data.messageId === "number";
 }
 
 /** =========================
@@ -108,10 +148,6 @@ export async function enterChatRoom(brandId: number): Promise<ChatRoomEnterRespo
   return response.data.data;
 }
 
-/**
- * ✅ size 파라미터 없음(서버 30 고정)
- * ✅ cursor 파라미터 이름: nextCursorMessageId
- */
 export async function getChatHistory(
   roomId: number,
   nextCursorMessageId?: number
@@ -128,6 +164,11 @@ export async function getChatHistory(
 
 export async function reportMessage(chatMessageId: number, reportReason: string): Promise<void> {
   await axiosInstance.post("/api/v1/chat/report", { chatMessageId, reportReason });
+}
+
+// ✅ 삭제 엔드포인트 확정: /api/v1/delete/{id}
+export async function deleteMessage(chatMessageId: number): Promise<void> {
+  await axiosInstance.delete(`/api/v1/delete/${chatMessageId}`);
 }
 
 /** =========================
@@ -149,12 +190,20 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
   useEffect(() => { topicRef.current = subscribeTopic; }, [subscribeTopic]);
 
   const disconnectTransportOnly = useCallback(() => {
-    try { subscriptionRef.current?.unsubscribe(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
+    try {
+      subscriptionRef.current?.unsubscribe();
+    } catch (e: unknown) {
+      console.debug("[WS] unsubscribe ignored", e);
+    }
     subscriptionRef.current = null;
 
     const client = clientRef.current;
     if (client) {
-      try { client.deactivate(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
+      try {
+        client.deactivate();
+      } catch (e: unknown) {
+        console.debug("[WS] deactivate ignored", e);
+      }
       clientRef.current = null;
     }
     setIsConnected(false);
@@ -170,6 +219,13 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
     for (const m of list) seen.add(m.messageId);
     seenMessageIdsRef.current = seen;
     setMessages(list);
+  }, []);
+
+  // ✅ A안: messageStatus만 업데이트
+  const updateMessageStatus = useCallback((messageId: number, status: MessageStatus) => {
+    setMessages(prev =>
+      prev.map(m => (m.messageId === messageId ? { ...m, messageStatus: status } : m))
+    );
   }, []);
 
   const connect = useCallback(() => {
@@ -197,17 +253,50 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
       onConnect: () => {
         setIsConnected(true);
 
-        try { subscriptionRef.current?.unsubscribe(); } catch {console.debug("[WS] unsubscribe failed (ignored):");}
+        try {
+          subscriptionRef.current?.unsubscribe();
+        } catch (e: unknown) {
+          console.debug("[WS] unsubscribe ignored", e);
+        }
         subscriptionRef.current = null;
 
         subscriptionRef.current = client.subscribe(topic, (frame: IMessage) => {
-          const msg = parseWsChatMessage(safeJson(frame.body));
+          const raw = safeJson(frame.body);
+
+          // ✅ Envelope 처리
+          if (isEnvelope(raw)) {
+            const type = raw.type;
+
+            if (type === "MESSAGE_BLINDED" && isBlindedPayload(raw.data)) {
+              updateMessageStatus(raw.data.chatMessageId, "BLINDED");
+              return;
+            }
+
+            if (type === "MESSAGE_DELETED" && isDeletedPayload(raw.data)) {
+              updateMessageStatus(raw.data.messageId, "DELETED");
+              return;
+            }
+
+            if (type === "CHAT_MESSAGE") {
+              const msg = parseWsChatMessage(raw.data);
+              if (!msg) return;
+
+              if (seenMessageIdsRef.current.has(msg.messageId)) return;
+              seenMessageIdsRef.current.add(msg.messageId);
+
+              setMessages(prev => [...prev, msg]);
+              return;
+            }
+          }
+
+          // (옵션) envelope 없이 바로 메시지 오는 경우 대비
+          const msg = parseWsChatMessage(raw);
           if (!msg) return;
 
           if (seenMessageIdsRef.current.has(msg.messageId)) return;
           seenMessageIdsRef.current.add(msg.messageId);
 
-          setMessages((prev) => [...prev, msg]);
+          setMessages(prev => [...prev, msg]);
         });
       },
 
@@ -216,7 +305,7 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
         console.error("STOMP error:", frame.headers["message"], frame.body);
         setIsConnected(false);
       },
-      onWebSocketError: (e) => {
+      onWebSocketError: (e: unknown) => {
         console.error("WebSocket error:", e);
         setIsConnected(false);
       },
@@ -224,7 +313,7 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
 
     client.activate();
     clientRef.current = client;
-  }, []);
+  }, [updateMessageStatus]);
 
   const sendMessage = useCallback((content: string) => {
     const client = clientRef.current;
@@ -250,5 +339,6 @@ export function useChatWebSocket(chatRoomId: number | null, subscribeTopic: stri
     isConnected,
     sendMessage,
     disconnect: disconnectTransportOnly,
+    updateMessageStatus,
   };
 }
