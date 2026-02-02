@@ -222,3 +222,9 @@ export const deleteOptionValue = async (optionValueId: number) => {
     const response = await axiosInstance.delete(`/api/v1/products/options/values/${optionValueId}`);
     return response.data;
 };
+
+// 상품 정보 삭제 (연관된 모든 variant 포함)
+export const deleteProduct = async (productInfoId: number) => {
+    const response = await axiosInstance.delete(`/api/v1/products/${productInfoId}`);
+    return response.data;
+};

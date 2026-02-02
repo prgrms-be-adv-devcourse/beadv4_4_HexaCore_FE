@@ -15,6 +15,7 @@ import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentFailPage } from './pages/PaymentFailPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { AdminSettlement } from './pages/admin/AdminSettlement';
+import { AdminProductList } from "./pages/admin/AdminProductList";
 import { AdminProductManagement } from "./pages/admin/AdminProductManagement";
 import { AdminBrandManagement } from "./pages/admin/AdminBrandManagement";
 import { AdminCategoryManagement } from "./pages/admin/AdminCategoryManagement";
@@ -50,7 +51,9 @@ function App() {
           <Route path="/mypage/settlement" element={<SettlementList />} />
           <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
           <Route path="/admin/settlement" element={<AdminSettlement />} />
-          <Route path="/admin/products/manage" element={<AdminProductManagement />} />
+          <Route path="/admin/products" element={<AdminProductList />} />
+          <Route path="/admin/product" element={<AdminProductManagement />} />
+          <Route path="/admin/product/:productInfoId" element={<AdminProductManagement />} />
           <Route path="/admin/brands/manage" element={<AdminBrandManagement />} />
           <Route path="/admin/categories/manage" element={<AdminCategoryManagement />} />
           <Route path="/admin/options/manage" element={<AdminOptionManagement />} />
