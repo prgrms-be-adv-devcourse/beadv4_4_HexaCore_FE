@@ -58,8 +58,9 @@ export interface SettlementDashboard {
 // 배치 실행 응답
 export interface BatchExecutionResponse {
     jobId: number;
+    jobName: string;           // dailySettlementJob 또는 monthlySettlementJob
     status: string;
-    targetMonth: string;
+    targetDate: string;        // 일간: yyyy-MM-dd, 월간: yyyy-MM
     startTime: string;
     endTime: string | null;
     processedCount: number;
@@ -88,12 +89,14 @@ export interface SettlementFilter {
 }
 
 // 정산 항목 필터 (User)
+// 백엔드 API: orderId, productId, status, startDate, endDate로 필터링
 export interface SettlementItemFilter {
     orderId?: number;
     productId?: number;
     status?: SettlementItemStatus;
-    startDate?: string;
-    endDate?: string;
+    startDate?: string;  // yyyy-MM-dd 형식
+    endDate?: string;    // yyyy-MM-dd 형식
     page: number;
     size: number;
 }
+

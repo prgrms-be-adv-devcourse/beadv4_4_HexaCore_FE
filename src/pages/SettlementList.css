@@ -9,7 +9,7 @@
 .sl-settlement-list {
     max-width: 900px;
     margin: 0 auto;
-    padding: 90px 24px 60px;
+    padding: 120px 24px 60px;
     min-height: 100vh;
     background: #f7f8fa;
 }
@@ -373,7 +373,7 @@
 /* 반응형 */
 @media (max-width: 768px) {
     .sl-settlement-list {
-        padding: 80px 16px 40px;
+        padding: 100px 16px 40px;
     }
 
     .sl-list-header h1 {

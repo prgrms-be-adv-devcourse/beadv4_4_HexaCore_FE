@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
+import { AdminLayout } from './layouts/AdminLayout';
 import { Home } from './pages/Home';
 import { Shop } from './pages/Shop';
 import { Login } from './pages/Login';
@@ -14,6 +15,7 @@ import { SalesBiddingPage } from './pages/SalesBiddingPage';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentFailPage } from './pages/PaymentFailPage';
 import { CheckoutPage } from './pages/CheckoutPage';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminSettlement } from './pages/admin/AdminSettlement';
 import { AdminProductManagement } from "./pages/admin/AdminProductManagement";
 import { AdminBrandManagement } from "./pages/admin/AdminBrandManagement";
@@ -49,13 +51,22 @@ function App() {
           <Route path="/checkout/:id" element={<CheckoutPage />} />
           <Route path="/mypage/settlement" element={<SettlementList />} />
           <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
-          <Route path="/admin/settlement" element={<AdminSettlement />} />
-          <Route path="/admin/products/manage" element={<AdminProductManagement />} />
-          <Route path="/admin/brands/manage" element={<AdminBrandManagement />} />
-          <Route path="/admin/categories/manage" element={<AdminCategoryManagement />} />
-          <Route path="/admin/options/manage" element={<AdminOptionManagement />} />
           <Route path="/error" element={<ErrorPage />} />
           <Route path="*" element={<ErrorPage />} />
+        </Route>
+
+        {/* Admin 레이아웃 적용 라우트 */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="settlement" element={<AdminSettlement />} />
+          <Route path="products" element={<AdminProductManagement />} />
+          <Route path="products/new" element={<AdminProductManagement />} />
+          <Route path="products/:productInfoId" element={<AdminProductManagement />} />
+          <Route path="brands" element={<AdminBrandManagement />} />
+          <Route path="categories" element={<AdminCategoryManagement />} />
+          <Route path="options" element={<AdminOptionManagement />} />
+          <Route path="users" element={<div className="text-center py-20 text-gray-500">회원 관리 페이지 (준비중)</div>} />
+          <Route path="settings" element={<div className="text-center py-20 text-gray-500">설정 페이지 (준비중)</div>} />
         </Route>
 
         {/* 결제 결과 페이지: 헤더/푸터 없이 독립적인 화면 구성 */}

@@ -41,10 +41,6 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_BACKEND_NOTIFICATION || 'http://localhost:8084',
           changeOrigin: true,
         },
-        '/api/v1/products': {
-          target: env.VITE_BACKEND_PRODUCT || 'http://localhost:8085',
-          changeOrigin: true,
-        },
         '/api/v1/settlements': {
           target: env.VITE_BACKEND_SETTLEMENT || 'http://localhost:8086',
           changeOrigin: true,

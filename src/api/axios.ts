@@ -66,24 +66,9 @@ axiosInstance.interceptors.response.use(
 
                 return Promise.reject(refreshError);
             }
-        } else if (error.response) {
-            // 401 외의 서버 에러 (500, 404 등) 처리
-            const status = error.response.status;
-            const message = (error.response.data as any)?.message || '서버와 통신 중 오류가 발생했습니다.';
-            const apiUrl = error.config?.url || 'unknown';
-            const method = error.config?.method?.toUpperCase() || 'UNKNOWN';
-
-            // 403(권한 없음) 등 특정 처리가 더 필요할 수 있으나, 일단 통합 에러 페이지로 유도
-            if (status >= 400 && status !== 401) {
-                const params = new URLSearchParams({
-                    status: status.toString(),
-                    message: message,
-                    apiUrl: apiUrl,
-                    method: method
-                });
-                window.location.href = `/error?${params.toString()}`;
-            }
         }
+        // 에러를 그대로 반환하여 각 컴포넌트에서 처리하도록 함
+        // 백엔드에서 오는 커스텀 에러 메시지를 화면에 표시할 수 있음
         return Promise.reject(error);
     }
 );

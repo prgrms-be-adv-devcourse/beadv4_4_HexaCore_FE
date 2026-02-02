@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell, Trash2 } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell, Trash2, Wallet } from 'lucide-react';
 import { updateNotificationSettings, getNotificationSettings } from '../api/user';
 import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
 
@@ -71,6 +71,7 @@ const DELIVERY_HISTORY = [
 ];
 
 export const MyPage = () => {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'profile');
@@ -146,6 +147,13 @@ export const MyPage = () => {
                             >
                                 <Grid size={18} />
                                 <span>판매 내역</span>
+                            </button>
+                            <button
+                                className="w-full flex items-center gap-3 px-6 py-4 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                                onClick={() => navigate('/mypage/settlement')}
+                            >
+                                <Wallet size={18} />
+                                <span>정산 내역</span>
                             </button>
                             <button
                                 className={`w-full flex items-center gap-3 px-6 py-4 text-sm font-bold transition-all ${activeTab === 'delivery' ? 'text-accent bg-accent/5' : 'text-gray-500 hover:bg-gray-50'}`}

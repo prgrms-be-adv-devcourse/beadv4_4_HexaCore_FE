@@ -44,6 +44,20 @@ export const SettlementList = () => {
         return `${start.getFullYear()}년 ${start.getMonth() + 1}월`;
     };
 
+    // 에러 메시지 추출
+    const extractErrorMessage = (error: unknown): string => {
+        if (error && typeof error === 'object') {
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
+            if (err.response?.data?.message) {
+                return err.response.data.message;
+            }
+            if (err.message) {
+                return err.message;
+            }
+        }
+        return '정산 내역을 불러오는데 실패했습니다.';
+    };
+
     // 데이터 조회
     useEffect(() => {
         const fetchData = async () => {
@@ -54,7 +68,7 @@ export const SettlementList = () => {
                 const data = await settlementService.getSettlements(startDate || undefined, endDate || undefined);
                 setSettlements(data.content);
             } catch (err) {
-                setError(err instanceof Error ? err.message : '정산 내역을 불러오는데 실패했습니다.');
+                setError(extractErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -66,7 +80,6 @@ export const SettlementList = () => {
     // 통계 계산
     const stats = {
         totalNet: settlements.reduce((sum, s) => sum + s.totalNetAmount, 0),
-        nextExpectedDate: settlements.find(s => s.status === 'PENDING' || s.status === 'IN_PROGRESS')?.expectedAt || null,
     };
 
     if (loading) {
@@ -102,10 +115,6 @@ export const SettlementList = () => {
 
             {/* 요약 정보 */}
             <div className="sl-summary-section">
-                <div className="sl-summary-item">
-                    <span className="sl-summary-label">정산 예정일</span>
-                    <span className="sl-summary-value">{formatDate(stats.nextExpectedDate)}</span>
-                </div>
                 <div className="sl-summary-item">
                     <span className="sl-summary-label">총 정산 금액</span>
                     <span className="sl-summary-value highlight">{formatAmount(stats.totalNet)}</span>
@@ -179,12 +188,11 @@ export const SettlementList = () => {
                                 </div>
 
                                 <div className="sl-settlement-footer">
-                                    <span className="sl-settlement-date">
-                                        {settlement.status === 'COMPLETED' && settlement.completedAt
-                                            ? `정산 완료: ${formatDate(settlement.completedAt)}`
-                                            : `정산 예정: ${formatDate(settlement.expectedAt)}`
-                                        }
-                                    </span>
+                                    {settlement.status === 'COMPLETED' && settlement.completedAt && (
+                                        <span className="sl-settlement-date">
+                                            정산 완료: {formatDate(settlement.completedAt)}
+                                        </span>
+                                    )}
                                     <ChevronRight size={20} className="sl-arrow-icon" />
                                 </div>
                             </div>

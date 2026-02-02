@@ -264,7 +264,7 @@ export const AdminProductManagement = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-[100px] pb-24 px-6 font-pretendard">
+        <div className="min-h-screen bg-gray-50 pb-24 font-pretendard">
             <div className="max-w-5xl mx-auto">
                 <div className="flex items-center gap-4 mb-10">
                     <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">

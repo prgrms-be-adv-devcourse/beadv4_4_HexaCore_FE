@@ -10,7 +10,6 @@ import type {
     Settlement, SettlementItem,
     SettlementStatus, SettlementItemStatus
 } from '../types/settlement';
-import './SettlementDetail.css';
 
 // 상태별 한글 라벨
 const STATUS_LABELS: Record<SettlementStatus, string> = {
@@ -45,6 +44,23 @@ const STATUS_ICONS: Record<SettlementStatus, React.ReactNode> = {
     FAILED: <AlertCircle size={24} />,
 };
 
+// 상태별 배경색 클래스
+const STATUS_BG_CLASSES: Record<SettlementStatus, string> = {
+    PENDING: 'bg-amber-500',
+    IN_PROGRESS: 'bg-cyan-500',
+    HOLD: 'bg-purple-500',
+    COMPLETED: 'bg-green-500',
+    FAILED: 'bg-red-500',
+};
+
+// 항목 상태별 스타일 클래스
+const ITEM_STATUS_CLASSES: Record<SettlementItemStatus, string> = {
+    INCLUDED: 'bg-green-100 text-green-800',
+    CANCELED: 'bg-gray-200 text-gray-700',
+    REFUNDED: 'bg-yellow-100 text-yellow-800',
+    NEGATIVE: 'bg-red-100 text-red-800',
+};
+
 type SortOption = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 
 export const SettlementDetail = () => {
@@ -75,6 +91,25 @@ export const SettlementDetail = () => {
         return new Date(dateString).toLocaleDateString('ko-KR', options);
     };
 
+    // 날짜 문자열에서 yyyy-MM-dd 형식 추출
+    const extractDateString = (dateTime: string): string => {
+        return dateTime.split('T')[0];
+    };
+
+    // 에러 메시지 추출
+    const extractErrorMessage = (error: unknown): string => {
+        if (error && typeof error === 'object') {
+            const err = error as { response?: { data?: { message?: string } }; message?: string };
+            if (err.response?.data?.message) {
+                return err.response.data.message;
+            }
+            if (err.message) {
+                return err.message;
+            }
+        }
+        return '정산 정보를 불러오는데 실패했습니다.';
+    };
+
     // 데이터 조회
     useEffect(() => {
         const fetchData = async () => {
@@ -95,11 +130,16 @@ export const SettlementDetail = () => {
 
                 setSettlement(found);
 
-                // 항목 조회
-                const itemsData = await settlementService.getSettlementItems({ page: 0, size: 100 });
+                // 해당 정산 기간의 항목 조회 (startAt ~ endAt)
+                const itemsData = await settlementService.getSettlementItems({
+                    startDate: extractDateString(found.startAt),
+                    endDate: extractDateString(found.endAt),
+                    page: 0,
+                    size: 100,
+                });
                 setItems(itemsData.content);
             } catch (err) {
-                setError(err instanceof Error ? err.message : '정산 정보를 불러오는데 실패했습니다.');
+                setError(extractErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -166,9 +206,9 @@ export const SettlementDetail = () => {
 
     if (loading) {
         return (
-            <div className="sd-detail">
-                <div className="sd-loading-container">
-                    <div className="sd-loading-spinner" />
+            <div className="max-w-[900px] mx-auto pt-[120px] px-6 pb-10 min-h-screen bg-gray-100">
+                <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                    <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin mb-3" />
                     <p>정산 정보를 불러오는 중...</p>
                 </div>
             </div>
@@ -177,135 +217,153 @@ export const SettlementDetail = () => {
 
     if (error || !settlement) {
         return (
-            <div className="sd-detail">
-                <div className="sd-error-container">
-                    <AlertCircle size={48} />
-                    <h2>오류가 발생했습니다</h2>
-                    <p>{error || '정산 내역을 찾을 수 없습니다.'}</p>
-                    <button onClick={() => navigate(-1)}>돌아가기</button>
+            <div className="max-w-[900px] mx-auto pt-[120px] px-6 pb-10 min-h-screen bg-gray-100">
+                <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500">
+                    <AlertCircle size={48} className="text-red-500 mb-3" />
+                    <h2 className="text-lg text-gray-800 mb-2 font-semibold">오류가 발생했습니다</h2>
+                    <p className="mb-5 text-sm">{error || '정산 내역을 찾을 수 없습니다.'}</p>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="px-5 py-2.5 bg-gray-800 text-white border-none rounded font-medium text-sm cursor-pointer hover:bg-gray-700"
+                    >
+                        돌아가기
+                    </button>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="sd-detail">
+        <div className="max-w-[900px] mx-auto pt-[120px] px-6 pb-10 min-h-screen bg-gray-100">
             {/* 상단 네비게이션 */}
-            <div className="sd-nav">
-                <button className="sd-back-btn" onClick={() => navigate(-1)}>
+            <div className="flex items-center gap-3 mb-5">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded text-sm font-medium text-gray-800 cursor-pointer hover:bg-gray-50"
+                >
                     <ArrowLeft size={20} />
                     <span>돌아가기</span>
                 </button>
-                <span className="sd-nav-title">정산 상세</span>
+                <span className="text-sm text-gray-500">정산 상세</span>
             </div>
 
             {/* 상태 카드 */}
-            <div className={`sd-status-card ${settlement.status.toLowerCase().replace('_', '-')}`}>
-                <div className="sd-status-icon-wrapper">
+            <div className="flex items-center gap-4 p-5 bg-white rounded-md mb-4 border border-gray-300 max-md:flex-col max-md:text-center max-md:gap-3">
+                <div className={`w-12 h-12 rounded-md flex items-center justify-center text-white flex-shrink-0 ${STATUS_BG_CLASSES[settlement.status]}`}>
                     {STATUS_ICONS[settlement.status]}
                 </div>
-                <div className="sd-status-info">
-                    <h2>{STATUS_LABELS[settlement.status]}</h2>
-                    <p>{STATUS_DESC[settlement.status]}</p>
+                <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-800 mb-1">{STATUS_LABELS[settlement.status]}</h2>
+                    <p className="text-sm text-gray-600">{STATUS_DESC[settlement.status]}</p>
                 </div>
-                <div className="sd-status-date">
+                <div className="text-right max-md:text-center">
                     {settlement.status === 'COMPLETED' && settlement.completedAt ? (
                         <>
-                            <span className="sd-date-label">완료일</span>
-                            <span className="sd-date-value">{formatDate(settlement.completedAt)}</span>
+                            <span className="block text-xs text-gray-500 mb-0.5">완료일</span>
+                            <span className="text-sm font-medium text-gray-800 tabular-nums tracking-tight">{formatDate(settlement.completedAt)}</span>
                         </>
                     ) : (
                         <>
-                            <span className="sd-date-label">예정일</span>
-                            <span className="sd-date-value">{formatDate(settlement.expectedAt)}</span>
+                            <span className="block text-xs text-gray-500 mb-0.5">예정일</span>
+                            <span className="text-sm font-medium text-gray-800 tabular-nums tracking-tight">{formatDate(settlement.expectedAt)}</span>
                         </>
                     )}
                 </div>
             </div>
 
             {/* 정산 요약 */}
-            <div className="sd-summary-section">
-                <h3>정산 요약</h3>
-                <div className="sd-summary-grid">
-                    <div className="sd-summary-card">
-                        <div className="sd-summary-icon sales">
+            <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">정산 요약</h3>
+                <div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
+                    <div className="flex items-center gap-3 p-4 bg-white rounded-md border border-gray-300">
+                        <div className="w-10 h-10 rounded bg-cyan-500 flex items-center justify-center text-white">
                             <TrendingUp size={24} />
                         </div>
-                        <div className="sd-summary-content">
-                            <span className="sd-summary-label">총 매출액</span>
-                            <span className="sd-summary-value">{formatAmount(settlement.totalSalesAmount)}</span>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-gray-500">총 매출액</span>
+                            <span className="text-lg font-semibold text-gray-800 tabular-nums tracking-tight">{formatAmount(settlement.totalSalesAmount)}</span>
                         </div>
                     </div>
-                    <div className="sd-summary-card">
-                        <div className="sd-summary-icon fee">
+                    <div className="flex items-center gap-3 p-4 bg-white rounded-md border border-gray-300">
+                        <div className="w-10 h-10 rounded bg-red-500 flex items-center justify-center text-white">
                             <CreditCard size={24} />
                         </div>
-                        <div className="sd-summary-content">
-                            <span className="sd-summary-label">수수료 (10%)</span>
-                            <span className="sd-summary-value fee">-{formatAmount(settlement.totalFeeAmount)}</span>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-gray-500">수수료 (10%)</span>
+                            <span className="text-lg font-semibold text-red-500 tabular-nums tracking-tight">-{formatAmount(settlement.totalFeeAmount)}</span>
                         </div>
                     </div>
-                    <div className="sd-summary-card highlight">
-                        <div className="sd-summary-icon net">
+                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-md border border-gray-800">
+                        <div className="w-10 h-10 rounded bg-gray-800 flex items-center justify-center text-white">
                             <DollarSign size={24} />
                         </div>
-                        <div className="sd-summary-content">
-                            <span className="sd-summary-label">정산 금액</span>
-                            <span className="sd-summary-value highlight">{formatAmount(settlement.totalNetAmount)}</span>
+                        <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-gray-500">정산 금액</span>
+                            <span className="text-xl font-semibold text-gray-800 tabular-nums tracking-tight">{formatAmount(settlement.totalNetAmount)}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* 정산 기간 정보 */}
-            <div className="sd-period-section">
-                <div className="sd-period-item">
-                    <Calendar size={18} />
-                    <span className="sd-period-label">정산 기간</span>
-                    <span className="sd-period-value">
+            <div className="flex gap-6 px-5 py-4 bg-white rounded-md border border-gray-300 mb-4 max-md:flex-col max-md:gap-2.5">
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
+                    <Calendar size={18} className="text-gray-500" />
+                    <span className="text-gray-500">정산 기간</span>
+                    <span className="font-medium text-gray-800 tabular-nums tracking-tight">
                         {formatDate(settlement.startAt)} ~ {formatDate(settlement.endAt)}
                     </span>
                 </div>
-                <div className="sd-period-item">
-                    <Package size={18} />
-                    <span className="sd-period-label">정산 항목</span>
-                    <span className="sd-period-value">{salesItems.length}건</span>
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
+                    <Package size={18} className="text-gray-500" />
+                    <span className="text-gray-500">정산 항목</span>
+                    <span className="font-medium text-gray-800">{salesItems.length}건</span>
                 </div>
             </div>
 
             {/* 정산 항목 헤더 */}
-            <div className="sd-items-header">
-                <h3>정산 항목</h3>
+            <div className="mb-3">
+                <h3 className="text-sm font-semibold text-gray-800">정산 항목</h3>
             </div>
 
             {/* 필터 영역 */}
-            <div className="sd-filter-section">
+            <div className="flex flex-col gap-3 p-4 bg-white rounded-md border border-gray-300 mb-3">
                 {/* 검색 */}
-                <div className="sd-search-box">
-                    <Search size={18} />
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded">
+                    <Search size={18} className="text-gray-500 flex-shrink-0" />
                     <input
                         type="text"
                         placeholder="주문번호 또는 상품번호 검색"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className="flex-1 border-none bg-transparent text-sm outline-none text-gray-800 placeholder:text-gray-400"
                     />
                     {searchQuery && (
-                        <button className="sd-clear-btn" onClick={() => setSearchQuery('')}>
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="flex items-center justify-center w-6 h-6 bg-gray-300 border-none rounded-full cursor-pointer text-gray-600 hover:bg-gray-400"
+                        >
                             <X size={16} />
                         </button>
                     )}
                 </div>
 
                 {/* 상태 필터 */}
-                <div className="sd-filter-chips">
+                <div className="flex gap-2 flex-wrap max-md:overflow-x-auto max-md:flex-nowrap max-md:pb-1">
                     {(['ALL', 'INCLUDED', 'CANCELED', 'REFUNDED', 'NEGATIVE'] as const).map((status) => (
                         <button
                             key={status}
-                            className={`sd-filter-chip ${statusFilter === status ? 'active' : ''}`}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium cursor-pointer transition-all duration-150 flex-shrink-0 ${
+                                statusFilter === status
+                                    ? 'bg-gray-800 border-gray-800 text-white'
+                                    : 'bg-white border-gray-300 text-gray-600 hover:border-gray-800 hover:text-gray-800'
+                            }`}
                             onClick={() => setStatusFilter(status)}
                         >
                             {status === 'ALL' ? '전체' : ITEM_STATUS_LABELS[status]}
-                            <span className="sd-chip-count">
+                            <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold ${
+                                statusFilter === status ? 'bg-white/20' : 'bg-black/5'
+                            }`}>
                                 {status === 'ALL'
                                     ? salesItems.length
                                     : salesItems.filter(i => i.status === status).length}
@@ -315,10 +373,14 @@ export const SettlementDetail = () => {
                 </div>
 
                 {/* 정렬 & 초기화 */}
-                <div className="sd-filter-actions">
-                    <div className="sd-sort-select">
-                        <ArrowUpDown size={16} />
-                        <select value={sortOption} onChange={(e) => setSortOption(e.target.value as SortOption)}>
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white border border-gray-300 rounded text-gray-600">
+                        <ArrowUpDown size={16} className="flex-shrink-0" />
+                        <select
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value as SortOption)}
+                            className="border-none bg-transparent text-xs font-medium text-gray-800 outline-none cursor-pointer"
+                        >
                             <option value="date_desc">최신순</option>
                             <option value="date_asc">오래된순</option>
                             <option value="amount_desc">금액 높은순</option>
@@ -326,7 +388,10 @@ export const SettlementDetail = () => {
                         </select>
                     </div>
                     {hasActiveFilters && (
-                        <button className="sd-reset-btn" onClick={resetFilters}>
+                        <button
+                            onClick={resetFilters}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-red-500 rounded text-xs font-medium text-red-500 cursor-pointer hover:bg-red-50"
+                        >
                             <X size={14} />
                             필터 초기화
                         </button>
@@ -336,36 +401,39 @@ export const SettlementDetail = () => {
 
             {/* 검색 결과 정보 */}
             {hasActiveFilters && (
-                <div className="sd-filter-result">
+                <div className="text-xs text-gray-500 mb-2 pl-1">
                     총 {salesItems.length}건 중 {filteredItems.length}건 표시
                 </div>
             )}
 
             {/* 정산 항목 목록 */}
-            <div className="sd-items-section">
+            <div className="bg-white rounded-md border border-gray-300 mb-4">
                 {filteredItems.length === 0 ? (
-                    <div className="sd-empty-items">
-                        <Package size={48} />
+                    <div className="flex flex-col items-center justify-center py-12 px-5 text-gray-500 text-sm">
+                        <Package size={48} className="mb-3 opacity-40" />
                         <p>{hasActiveFilters ? '검색 조건에 맞는 항목이 없습니다.' : '정산 항목이 없습니다.'}</p>
                     </div>
                 ) : (
-                    <div className="sd-items-list">
-                        {filteredItems.map(item => (
-                            <div key={item.settlementItemId} className="sd-item-card">
-                                <div className="sd-item-main">
-                                    <div className="sd-item-info">
-                                        <span className="sd-item-order">주문 #{item.orderId}</span>
-                                        <span className="sd-item-product">상품 #{item.productId}</span>
+                    <div className="flex flex-col">
+                        {filteredItems.map((item, index) => (
+                            <div
+                                key={item.settlementItemId}
+                                className={`px-5 py-4 hover:bg-gray-50 ${index !== filteredItems.length - 1 ? 'border-b border-gray-100' : ''}`}
+                            >
+                                <div className="flex justify-between items-start mb-2 max-md:flex-col max-md:gap-2.5">
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="font-medium text-gray-800 text-sm">주문 #{item.orderId}</span>
+                                        <span className="text-xs text-gray-500">상품 #{item.productId}</span>
                                     </div>
-                                    <div className="sd-item-amount">
-                                        <span className="sd-amount-value">{formatAmount(item.amount)}</span>
-                                        <span className={`sd-item-status ${item.status.toLowerCase()}`}>
+                                    <div className="text-right flex flex-col items-end gap-1 max-md:items-start">
+                                        <span className="text-base font-semibold text-gray-800 tabular-nums tracking-tight">{formatAmount(item.amount)}</span>
+                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${ITEM_STATUS_CLASSES[item.status]}`}>
                                             {ITEM_STATUS_LABELS[item.status]}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="sd-item-meta">
-                                    <span className="sd-meta-date">
+                                <div className="flex justify-between text-xs text-gray-500">
+                                    <span>
                                         구매확정: {formatDate(item.confirmedAt, 'datetime')}
                                     </span>
                                 </div>
@@ -376,11 +444,11 @@ export const SettlementDetail = () => {
 
                 {/* 수수료 항목 요약 */}
                 {feeItems.length > 0 && (
-                    <div className="sd-fee-summary">
-                        <h4>수수료 내역</h4>
-                        <div className="sd-fee-total">
-                            <span>총 {feeItems.length}건</span>
-                            <span className="sd-fee-amount">
+                    <div className="px-5 py-4 border-t border-gray-300 bg-gray-50">
+                        <h4 className="text-sm font-medium text-gray-600 mb-2.5">수수료 내역</h4>
+                        <div className="flex justify-between items-center px-4 py-3 bg-white border border-gray-300 rounded">
+                            <span className="text-sm text-gray-600">총 {feeItems.length}건</span>
+                            <span className="font-semibold text-red-500 text-base tabular-nums tracking-tight">
                                 -{formatAmount(feeItems.reduce((sum, item) => sum + item.amount, 0))}
                             </span>
                         </div>
@@ -389,12 +457,18 @@ export const SettlementDetail = () => {
             </div>
 
             {/* 하단 안내 */}
-            <div className="sd-help-section">
-                <h4>정산 안내</h4>
-                <ul>
-                    <li>정산은 매월 1일에 전월 판매 확정 건에 대해 자동으로 진행됩니다.</li>
-                    <li>정산 예정일로부터 영업일 기준 3일 이내 등록된 계좌로 입금됩니다.</li>
-                    <li>정산 관련 문의는 고객센터로 연락해주세요.</li>
+            <div className="p-5 bg-white rounded-md border border-gray-300">
+                <h4 className="text-sm font-semibold text-gray-800 mb-3">정산 안내</h4>
+                <ul className="list-none p-0 m-0">
+                    <li className="relative pl-3.5 text-sm text-gray-600 leading-7 before:content-['•'] before:absolute before:left-0 before:text-gray-500">
+                        정산은 매월 1일에 전월 판매 확정 건에 대해 자동으로 진행됩니다.
+                    </li>
+                    <li className="relative pl-3.5 text-sm text-gray-600 leading-7 before:content-['•'] before:absolute before:left-0 before:text-gray-500">
+                        정산 예정일로부터 영업일 기준 3일 이내 등록된 계좌로 입금됩니다.
+                    </li>
+                    <li className="relative pl-3.5 text-sm text-gray-600 leading-7 before:content-['•'] before:absolute before:left-0 before:text-gray-500">
+                        정산 관련 문의는 고객센터로 연락해주세요.
+                    </li>
                 </ul>
             </div>
         </div>
