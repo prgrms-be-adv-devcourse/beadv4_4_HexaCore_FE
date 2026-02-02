@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 
-const navItems = [
+interface NavItemType {
+    label: string;
+    exact?: boolean;
+    children?: NavItemType[];
+}
+
+const navItems: NavItemType[] = [
     { path: '/admin', label: '홈', exact: true },
     { path: '/admin/settlement', label: '정산' },
     {
         label: '상품',
         children: [
-            { path: '/admin/products', label: '상품 목록' },
+            { path: '/admin/products', label: '상품 목록', exact: true },
             { path: '/admin/brands', label: '브랜드 관리' },
             { path: '/admin/categories', label: '카테고리 관리' },
             { path: '/admin/options', label: '옵션 관리' },
@@ -17,15 +23,15 @@ const navItems = [
     { path: '/admin/users', label: '회원' },
 ];
 
-const NavItem = ({ item, closeSidebar }: { item: (typeof navItems)[0], closeSidebar?: () => void }) => {
+const NavItem = ({ item, closeSidebar }: { item: NavItemType, closeSidebar?: () => void }) => {
     const location = useLocation();
     const [isSubmenuOpen, setIsSubmenuOpen] = useState(() => 
-        item.children ? item.children.some(child => location.pathname.startsWith(child.path)) : false
+        item.children ? item.children.some(child => location.pathname.startsWith(child.path!)) : false
     );
 
     const isParentActive = item.children 
-        ? item.children.some(child => location.pathname.startsWith(child.path))
-        : location.pathname === item.path || (!item.exact && location.pathname.startsWith(item.path));
+        ? item.children.some(child => location.pathname.startsWith(child.path!))
+        : (item.path && location.pathname === item.path) || (!item.exact && item.path && location.pathname.startsWith(item.path));
         
     const handleToggle = () => {
         if (item.children) {
@@ -52,7 +58,7 @@ const NavItem = ({ item, closeSidebar }: { item: (typeof navItems)[0], closeSide
                         {item.children.map(child => (
                             <NavLink
                                 key={child.path}
-                                to={child.path}
+                                to={child.path!}
                                 end={child.exact}
                                 onClick={closeSidebar}
                                 className={({ isActive }) => 
