@@ -51,7 +51,7 @@ export const getProducts = async (filter: ProductFilter = {}): Promise<Paginated
 
     const url = buildUrl('/api/v1/products', params);
     const response = await axiosInstance.get(url);
-    // 백엔드 CommonResponse 구조에 따라 실제 데이터는 response.data.data 에 있음
+    
     return response.data.data;
 };
 
@@ -220,5 +220,11 @@ export const updateOptionValue = async (optionValueId: number, data: { optionGro
 // 옵션 값 삭제 (DELETE /api/v1/products/options/values/{optionValueId})
 export const deleteOptionValue = async (optionValueId: number) => {
     const response = await axiosInstance.delete(`/api/v1/products/options/values/${optionValueId}`);
+    return response.data;
+};
+
+// 상품 정보 삭제 (연관된 모든 variant 포함)
+export const deleteProduct = async (productInfoId: number) => {
+    const response = await axiosInstance.delete(`/api/v1/products/${productInfoId}`);
     return response.data;
 };

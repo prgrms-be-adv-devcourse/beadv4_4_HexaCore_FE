@@ -26,7 +26,7 @@ interface FormProductInfo {
     name: string;
     code: string;
     releasePrice: number;
-    releasedDate: string;
+    releasedDate: string; // Keep as string for input[type=datetime-local]
 }
 
 interface FormVariantData {
@@ -42,8 +42,8 @@ interface FormState {
 }
 
 // Reusable Components matching project style
-const FormCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+const FormCard: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
+    <div className={`bg-white rounded-2xl p-8 border border-gray-100 shadow-sm ${className}`}>
         <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">{title}</h3>
         {children}
     </div>
@@ -63,22 +63,22 @@ const StyledInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     />
 );
 
-const StyledSelect = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-    <select
-        {...props}
-        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition appearance-none bg-no-repeat bg-right"
-        style={{
-            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-            backgroundPosition: 'right 0.7rem center',
-            backgroundSize: '1.2em 1.2em'
-        }}
-    />
+const StyledSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
+    <div className="relative">
+        <select
+            {...props}
+            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 font-medium text-[#333] transition appearance-none"
+        />
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+            <ChevronLeft size={16} className="transform -rotate-90" />
+        </div>
+    </div>
 );
 
 const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void, type?: 'button'|'submit', disabled?: boolean }> = ({ children, ...props }) => (
     <button
         {...props}
-        className="h-14 w-full bg-gray-900 text-white font-bold rounded-xl shadow-md shadow-gray-900/10 transition-all hover:bg-gray-800 active:scale-[0.98] disabled:bg-gray-300 disabled:shadow-none"
+        className="h-14 w-full bg-gray-900 text-white font-bold rounded-xl shadow-md shadow-gray-900/10 transition-all hover:bg-gray-800 active:scale-[0.98] disabled:bg-gray-300 disabled:shadow-none flex items-center justify-center"
     >
         {children}
     </button>
@@ -132,7 +132,7 @@ export const AdminProductManagement = () => {
                             productId: p.productId,
                             inventory: p.inventory,
                             optionValueIds: ids,
-                            imageUrls: p.imageUrls,
+                            imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [''],
                         };
                     });
 
@@ -145,18 +145,24 @@ export const AdminProductManagement = () => {
                             releasePrice: productData.productInfo.releasePrice,
                             releasedDate: new Date(productData.productInfo.releaseDate).toISOString().substring(0, 16),
                         },
-                        variants: mappedVariants
+                        variants: mappedVariants.length > 0 ? mappedVariants : [{ optionValueIds: [], inventory: 0, imageUrls: [''] }]
+                    });
+                } else {
+                     setFormData({
+                        productInfo: { brandId: '', categoryId: '', name: '', code: '', releasePrice: 0, releasedDate: '' },
+                        variants: [{ optionValueIds: [], inventory: 0, imageUrls: [''] }],
                     });
                 }
             } catch (err) {
                 console.error("Failed to load initial data", err);
                 alert("데이터 로딩에 실패했습니다.");
+                navigate(-1);
             } finally {
                 setIsLoading(false);
             }
         };
         fetchData();
-    }, [isEditing, productInfoId]);
+    }, [isEditing, productInfoId, navigate]);
 
     const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -183,6 +189,10 @@ export const AdminProductManagement = () => {
     };
 
     const removeVariant = (index: number) => {
+        if (formData.variants.length <= 1) {
+            alert('최소 하나 이상의 옵션이 필요합니다.');
+            return;
+        }
         setFormData(prev => ({
             ...prev,
             variants: prev.variants.filter((_, i) => i !== index),
@@ -202,6 +212,10 @@ export const AdminProductManagement = () => {
     };
 
     const removeImageUrl = (variantIndex: number, imageIndex: number) => {
+        if (formData.variants[variantIndex].imageUrls.length <= 1) {
+            alert('최소 하나 이상의 이미지가 필요합니다.');
+            return;
+        }
         setFormData(prev => ({
             ...prev,
             variants: prev.variants.map((variant, vIdx) => vIdx === variantIndex
@@ -210,37 +224,79 @@ export const AdminProductManagement = () => {
             ),
         }));
     };
+    
+    const toggleOptionValue = (variantIndex: number, selectedOptionValueId: number) => {
+        setFormData(prev => {
+            const newVariants = [...prev.variants];
+            const currentVariant = { ...newVariants[variantIndex] };
+            let updatedOptionValueIds = [...currentVariant.optionValueIds];
 
-    const toggleOptionValue = (variantIndex: number, optionValueId: number) => {
-        const newVariants = [...formData.variants];
-        const currentOptions = newVariants[variantIndex].optionValueIds;
-        if (currentOptions.includes(optionValueId)) {
-            newVariants[variantIndex].optionValueIds = currentOptions.filter(id => id !== optionValueId);
-        } else {
-            newVariants[variantIndex].optionValueIds.push(optionValueId);
-        }
-        setFormData(prev => ({ ...prev, variants: newVariants }));
+            let selectedOptionGroupId: number | undefined;
+            for (const group of groupedOptions) {
+                if (group.optionValues.some(ov => ov.id === selectedOptionValueId)) {
+                    selectedOptionGroupId = group.id;
+                    break;
+                }
+            }
+
+            if (selectedOptionGroupId === undefined) return prev;
+
+            updatedOptionValueIds = updatedOptionValueIds.filter(existingId => {
+                let existingOptionGroupId: number | undefined;
+                for (const group of groupedOptions) {
+                    if (group.optionValues.some(ov => ov.id === existingId)) {
+                        existingOptionGroupId = group.id;
+                        break;
+                    }
+                }
+                return existingOptionGroupId !== selectedOptionGroupId;
+            });
+            
+            const isAlreadySelected = currentVariant.optionValueIds.includes(selectedOptionValueId);
+
+            if (!isAlreadySelected) {
+                updatedOptionValueIds.push(selectedOptionValueId);
+            }
+
+            newVariants[variantIndex] = { ...currentVariant, optionValueIds: updatedOptionValueIds };
+
+            return { ...prev, variants: newVariants };
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.productInfo.brandId || !formData.productInfo.categoryId) {
-            alert("브랜드와 카테고리를 선택해주세요.");
+        const { brandId, categoryId, name, code, releasePrice, releasedDate } = formData.productInfo;
+        if (!brandId || !categoryId || !name || !code || !releasePrice || !releasedDate) {
+            alert("상품 기본 정보를 모두 입력해주세요.");
+            return;
+        }
+
+        if (formData.variants.some(v => v.imageUrls.some(url => !url))) {
+            alert('모든 이미지 URL을 입력해주세요.');
+            return;
+        }
+        
+        if (formData.variants.some(v => v.optionValueIds.length !== groupedOptions.length)) {
+            alert(`모든 옵션 그룹에 대해 값을 하나씩 선택해주세요. (총 ${groupedOptions.length}개)`);
             return;
         }
 
         setIsSubmitting(true);
         try {
             const payload: ProductCreateRequest | ProductUpdateRequest = {
-                ...formData,
                 productInfo: {
                     ...formData.productInfo,
                     brandId: Number(formData.productInfo.brandId),
                     categoryId: Number(formData.productInfo.categoryId),
+                    releasePrice: Number(formData.productInfo.releasePrice),
                     releasedDate: new Date(formData.productInfo.releasedDate).toISOString()
                 },
-                variants: formData.variants,
+                variants: formData.variants.map(v => ({
+                    ...v,
+                    imageUrls: v.imageUrls.filter(url => url.trim() !== '')
+                })),
             };
 
             if (isEditing && productInfoId) {
@@ -250,7 +306,7 @@ export const AdminProductManagement = () => {
                 await createProduct(payload as ProductCreateRequest);
                 alert('상품이 등록되었습니다.');
             }
-            navigate('/'); // 임시로, 메인 페이지로 이동
+            navigate('/admin/products');
         } catch (error) {
             console.error('Failed to save product:', error);
             alert('상품 저장에 실패했습니다.');
@@ -260,27 +316,27 @@ export const AdminProductManagement = () => {
     };
 
     if (isLoading) {
-        return <div className="flex justify-center items-center h-screen"><Loader2 className="animate-spin w-10 h-10" /></div>;
+        return <div className="flex justify-center items-center min-h-screen bg-gray-50"><Loader2 className="animate-spin w-10 h-10 text-gray-400" /></div>;
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-24 font-pretendard">
+        <div className="min-h-screen bg-gray-50 pt-[100px] pb-24 px-6 font-pretendard">
             <div className="max-w-5xl mx-auto">
                 <div className="flex items-center gap-4 mb-10">
                     <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                         <ChevronLeft size={24} className="text-gray-600" />
                     </button>
-                    <h2 className="text-3xl font-black text-[#333] tracking-tight">{isEditing ? '상품 수정' : '상품 등록'}</h2>
+                    <h2 className="text-3xl font-black text-[#333] tracking-tight">{isEditing ? '상품 수정' : '새 상품 등록'}</h2>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     <FormCard title="상품 기본 정보">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <FormField label="상품명">
-                                <StyledInput name="name" value={formData.productInfo.name} onChange={handleInfoChange} required />
+                                <StyledInput name="name" value={formData.productInfo.name} onChange={handleInfoChange} required placeholder="예: 조던 1 레트로 하이 OG" />
                             </FormField>
-                            <FormField label="상품 코드">
-                                <StyledInput name="code" value={formData.productInfo.code} onChange={handleInfoChange} required />
+                            <FormField label="상품 코드 (모델 번호)">
+                                <StyledInput name="code" value={formData.productInfo.code} onChange={handleInfoChange} required placeholder="예: 555088-101" />
                             </FormField>
                             <FormField label="브랜드">
                                 <StyledSelect name="brandId" value={formData.productInfo.brandId} onChange={handleInfoChange} required>
@@ -295,7 +351,7 @@ export const AdminProductManagement = () => {
                                 </StyledSelect>
                             </FormField>
                             <FormField label="발매가">
-                                <StyledInput type="number" name="releasePrice" value={formData.productInfo.releasePrice} onChange={handleInfoChange} required />
+                                <StyledInput type="number" name="releasePrice" value={formData.productInfo.releasePrice} onChange={handleInfoChange} required min="0" />
                             </FormField>
                             <FormField label="발매일">
                                 <StyledInput type="datetime-local" name="releasedDate" value={formData.productInfo.releasedDate} onChange={handleInfoChange} required />
@@ -307,23 +363,27 @@ export const AdminProductManagement = () => {
                         <div className="space-y-6">
                             {formData.variants.map((variant, vIdx) => (
                                 <div key={vIdx} className="bg-gray-50/70 p-6 rounded-xl border border-gray-200/80 relative">
-                                    <h4 className="font-bold text-gray-700 mb-4">옵션 #{vIdx + 1}</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                                    <h4 className="font-bold text-gray-800 mb-6 pb-4 border-b border-gray-200">옵션 #{vIdx + 1}</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8">
+
+                                        {/* 재고 */}
                                         <FormField label="재고">
-                                            <StyledInput type="number" value={variant.inventory} onChange={e => handleVariantChange(vIdx, 'inventory', Number(e.target.value))} />
+                                            <StyledInput type="number" value={variant.inventory} onChange={e => handleVariantChange(vIdx, 'inventory', Number(e.target.value))} min="0" />
                                         </FormField>
+
+                                        {/* 옵션 선택 */}
                                         <FormField label="옵션 선택">
                                             <div className="space-y-4">
                                                 {groupedOptions.map((group) => (
                                                     <div key={group.id}>
-                                                        <p className="text-xs font-semibold text-gray-600 mb-2">{group.name}</p>
+                                                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{group.name}</p>
                                                         <div className="flex flex-wrap gap-2">
                                                             {group.optionValues.map(opt => (
                                                                 <button
                                                                     key={opt.id}
                                                                     type="button"
                                                                     onClick={() => toggleOptionValue(vIdx, opt.id)}
-                                                                    className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition-colors ${variant.optionValueIds.includes(opt.id) ? 'bg-accent/10 border-accent text-accent' : 'bg-white border-gray-200 hover:border-gray-400'}`}
+                                                                    className={`px-3 py-1.5 text-sm font-medium rounded-full border-2 transition-all ${variant.optionValueIds.includes(opt.id) ? 'bg-accent border-accent text-white shadow-sm' : 'bg-white border-gray-200 hover:border-gray-400'}`}
                                                                 >
                                                                     {opt.value}
                                                                 </button>
@@ -333,13 +393,15 @@ export const AdminProductManagement = () => {
                                                 ))}
                                             </div>
                                         </FormField>
+
+                                        {/* 이미지 URL */}
                                         <div className="md:col-span-2">
                                             <FormField label="이미지 URL">
                                                 <div className="space-y-3">
                                                     {variant.imageUrls.map((url, iIdx) => (
                                                         <div key={iIdx} className="flex items-center gap-2">
                                                             <StyledInput type="url" placeholder="https://example.com/image.jpg" value={url} onChange={e => handleImageUrlChange(vIdx, iIdx, e.target.value)} required />
-                                                            <button type="button" onClick={() => removeImageUrl(vIdx, iIdx)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                                                            <button type="button" onClick={() => removeImageUrl(vIdx, iIdx)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors flex-shrink-0">
                                                                 <Trash2 size={16} />
                                                             </button>
                                                         </div>
@@ -355,7 +417,7 @@ export const AdminProductManagement = () => {
                                             </FormField>
                                         </div>
                                     </div>
-                                    <button type="button" onClick={() => removeVariant(vIdx)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                                    <button type="button" onClick={() => removeVariant(vIdx)} className="absolute top-5 right-5 p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
                                         <X size={18} />
                                     </button>
                                 </div>
@@ -363,7 +425,7 @@ export const AdminProductManagement = () => {
                             <button
                                 type="button"
                                 onClick={addVariant}
-                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-accent bg-accent/5 border-2 border-dashed border-accent/20 rounded-xl py-4 hover:bg-accent/10 transition-colors"
+                                className="w-full flex items-center justify-center gap-2 text-sm font-bold text-accent bg-white border-2 border-dashed border-gray-300 rounded-xl py-4 hover:bg-gray-50 transition-colors"
                             >
                                 <Plus size={16} /> 새 옵션 추가
                             </button>
@@ -371,9 +433,9 @@ export const AdminProductManagement = () => {
                     </FormCard>
 
                     <div className="flex justify-end pt-4">
-                        <div className="w-full md:w-1/4">
+                        <div className="w-full md:w-1/3">
                             <PrimaryButton type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="animate-spin mx-auto"/> : isEditing ? '상품 수정하기' : '상품 등록하기'}
+                                {isSubmitting ? <Loader2 className="animate-spin"/> : isEditing ? '상품 수정하기' : '상품 등록하기'}
                             </PrimaryButton>
                         </div>
                     </div>
@@ -382,5 +444,3 @@ export const AdminProductManagement = () => {
         </div>
     );
 };
-
-export default AdminProductManagement;
