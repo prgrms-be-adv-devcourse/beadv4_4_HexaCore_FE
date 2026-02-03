@@ -168,7 +168,7 @@ export async function reportMessage(chatMessageId: number, reportReason: string)
 
 // ✅ 삭제 엔드포인트 확정: /api/v1/delete/{id}
 export async function deleteMessage(chatMessageId: number): Promise<void> {
-  await axiosInstance.delete(`/api/v1/delete/${chatMessageId}`);
+  await axiosInstance.delete(`/api/v1/chat/delete/${chatMessageId}`);
 }
 
 /** =========================
