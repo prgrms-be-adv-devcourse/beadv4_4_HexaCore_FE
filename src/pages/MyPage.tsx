@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell, Trash2, Wallet } from 'lucide-react';
-import { updateNotificationSettings, getNotificationSettings } from '../api/user';
+import { updateNotificationSettings, getNotificationSettings, getUserProfile, updateUserProfile, type UserProfileResponse } from '../api/user';
 import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
 
 /* Mock Data for Transactions */
@@ -75,6 +75,64 @@ export const MyPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'profile');
+    const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+    const [isProfileLoading, setIsProfileLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            setIsProfileLoading(true);
+            try {
+                const data = await getUserProfile();
+                setProfile(data);
+            } catch (error) {
+                console.error("Failed to fetch profile:", error);
+            } finally {
+                setIsProfileLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []); // 페이지 진입 시 한 번만 로드
+
+    const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setProfile(prev => prev ? { ...prev, [name]: value } : null);
+    };
+
+    const handleSaveProfile = async () => {
+        if (!profile) return;
+
+        // Validation based on backend rules
+        if (!profile.nickname || profile.nickname.length < 2 || profile.nickname.length > 20) {
+            alert("닉네임은 2~20자 사이여야 합니다.");
+            return;
+        }
+        if (profile.name && profile.name.length > 20) {
+            alert("이름은 20자 이내여야 합니다.");
+            return;
+        }
+        if (profile.phone && !/^01[0-9]\d{7,8}$/.test(profile.phone.replace(/-/g, ''))) {
+            alert("올바른 전화번호 형식이 아닙니다.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            await updateUserProfile({
+                nickname: profile.nickname,
+                name: profile.name,
+                phone: profile.phone?.replace(/-/g, ''), // 숫자만 전송
+                address: profile.address
+            });
+            alert("프로필이 성공적으로 수정되었습니다.");
+        } catch (error: any) {
+            console.error("Update profile failed:", error);
+            const message = error.response?.data?.message || "프로필 수정에 실패했습니다.";
+            alert(message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     useEffect(() => {
         if (tabParam) {
@@ -107,8 +165,8 @@ export const MyPage = () => {
                                         className="w-full h-full rounded-full object-cover"
                                     />
                                 </div>
-                                <h3 className="text-lg font-bold text-[#333]">테스터</h3>
-                                <p className="text-sm text-gray-400 mb-6">tester@example.com</p>
+                                <h3 className="text-lg font-bold text-[#333]">{profile?.nickname || '불러오는 중...'}</h3>
+                                <p className="text-sm text-gray-400 mb-6">{profile?.email || ''}</p>
 
                                 <div className="w-full pt-6 border-t border-gray-100">
                                     <div className="flex justify-between items-center mb-1">
@@ -194,57 +252,75 @@ export const MyPage = () => {
                             <section className="bg-white rounded-2xl p-8 border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.02)]">
                                 <h3 className="text-xl font-bold text-[#333] mb-8 pb-4 border-b border-gray-100">프로필 정보</h3>
 
-                                <div className="space-y-6 max-w-[480px] mx-auto py-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-400">이메일 주소</label>
-                                        <input
-                                            type="email"
-                                            defaultValue="user@example.com"
-                                            disabled
-                                            className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-gray-400 cursor-not-allowed font-medium"
-                                        />
+                                {isProfileLoading ? (
+                                    <div className="flex justify-center py-20">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
                                     </div>
+                                ) : (
+                                    <div className="space-y-6 max-w-[480px] mx-auto py-4">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-400">이메일 주소</label>
+                                            <input
+                                                type="email"
+                                                value={profile?.email || ''}
+                                                disabled
+                                                className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-gray-400 cursor-not-allowed font-medium"
+                                            />
+                                        </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-400">닉네임</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="철수짱"
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
-                                        />
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-400">닉네임</label>
+                                            <input
+                                                type="text"
+                                                name="nickname"
+                                                value={profile?.nickname || ''}
+                                                onChange={handleProfileChange}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-400">이름</label>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={profile?.name || ''}
+                                                onChange={handleProfileChange}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-400">전화번호</label>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={profile?.phone || ''}
+                                                onChange={handleProfileChange}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-400">기본 배송지</label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                value={profile?.address || ''}
+                                                onChange={handleProfileChange}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={handleSaveProfile}
+                                            disabled={isSaving}
+                                            className="w-full bg-accent text-white py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5 mt-4 disabled:opacity-50"
+                                        >
+                                            {isSaving ? '저장 중...' : '수정 사항 저장'}
+                                        </button>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-400">이름</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="김철수"
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-400">전화번호</label>
-                                        <input
-                                            type="tel"
-                                            defaultValue="010-1234-5678"
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-400">기본 배송지</label>
-                                        <input
-                                            type="text"
-                                            defaultValue="서울특별시 강남구 테헤란로 123"
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent font-medium text-[#333]"
-                                        />
-                                    </div>
-
-                                    <button className="w-full bg-accent text-white py-4 rounded-xl font-bold shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:-translate-y-0.5 mt-4">
-                                        수정 사항 저장
-                                    </button>
-                                </div>
+                                )}
                             </section>
                         )}
 
