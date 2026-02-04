@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Truck, Bell, Trash2, Wallet } from 'lucide-react';
 import { updateNotificationSettings, getNotificationSettings, getUserProfile, updateUserProfile, type UserProfileResponse } from '../api/user';
 import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
+import { logout } from '../api/auth';
 
 /* Mock Data for Transactions */
 const TRANSACTIONS = [
@@ -173,6 +174,18 @@ export const MyPage = () => {
         }
     };
 
+    const handleLogout = async () => {
+        if (!window.confirm("로그아웃 하시겠습니까?")) return;
+
+        try {
+            await logout();
+            navigate('/');
+        } catch (error) {
+            console.error("Logout failed:", error);
+            alert("로그아웃 중 오류가 발생했습니다.");
+        }
+    };
+
     useEffect(() => {
         if (tabParam) {
             setActiveTab(tabParam);
@@ -272,7 +285,10 @@ export const MyPage = () => {
                                 <Settings size={18} />
                                 <span>설정</span>
                             </button>
-                            <button className="w-full flex items-center gap-3 px-6 py-4 text-sm font-bold text-red-400 hover:bg-red-50 transition-all">
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center gap-3 px-6 py-4 text-sm font-bold text-red-400 hover:bg-red-50 transition-all"
+                            >
                                 <LogOut size={18} />
                                 <span>로그아웃</span>
                             </button>
