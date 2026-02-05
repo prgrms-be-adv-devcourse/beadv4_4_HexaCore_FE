@@ -4,6 +4,7 @@ import { User, ShoppingBag, CreditCard, Grid, ChevronRight, Settings, LogOut, Tr
 import { updateNotificationSettings, getNotificationSettings, getUserProfile, updateUserProfile, type UserProfileResponse } from '../api/user';
 import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
 import { logout } from '../api/auth';
+import { getWalletBalance, type WalletBalanceResponse } from '../api/cash';
 
 /* Mock Data for Transactions */
 const TRANSACTIONS = [
@@ -78,6 +79,7 @@ export const MyPage = () => {
     const [activeTab, setActiveTab] = useState(tabParam || 'profile');
     const [profile, setProfile] = useState<UserProfileResponse | null>(null);
     const [draftProfile, setDraftProfile] = useState<UserProfileResponse | null>(null);
+    const [wallet, setWallet] = useState<WalletBalanceResponse | null>(null);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -94,7 +96,18 @@ export const MyPage = () => {
                 setIsProfileLoading(false);
             }
         };
+
+        const fetchWallet = async () => {
+            try {
+                const data = await getWalletBalance();
+                setWallet(data);
+            } catch (error) {
+                console.error("Failed to fetch wallet balance:", error);
+            }
+        };
+
         fetchProfile();
+        fetchWallet();
     }, []);
 
     const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -225,7 +238,9 @@ export const MyPage = () => {
                                         <span className="text-xs font-bold text-gray-400">결제 예치금</span>
                                         <span className="text-xs font-bold text-accent hover:underline cursor-pointer">상세내역</span>
                                     </div>
-                                    <div className="text-xl font-black text-[#333] mb-4 mt-3">1,500,000원</div>
+                                    <div className="text-xl font-black text-[#333] mb-4 mt-3">
+                                        {wallet ? `${wallet.balance.toLocaleString()}원` : '로딩 중...'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -381,7 +396,10 @@ export const MyPage = () => {
                                     <div className="bg-[#F8F9FA] rounded-2xl p-8 border border-gray-100 flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
                                         <div>
                                             <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Total Balance</div>
-                                            <div className="text-4xl font-black text-accent tracking-tighter">1,500,000<span className="text-xl ml-1 font-bold text-gray-300">원</span></div>
+                                            <div className="text-4xl font-black text-accent tracking-tighter">
+                                                {wallet ? wallet.balance.toLocaleString() : '0'}
+                                                <span className="text-xl ml-1 font-bold text-gray-300">원</span>
+                                            </div>
                                         </div>
                                         <div className="flex gap-3 w-full md:w-auto">
                                             <button className="flex-1 md:flex-none bg-white text-gray-700 border-2 border-gray-400 px-8 py-3 rounded-xl font-bold text-sm shadow-sm transition-all hover:bg-gray-50 hover:border-gray-600 hover:text-[#333]">출금</button>
