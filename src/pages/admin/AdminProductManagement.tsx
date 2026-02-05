@@ -16,8 +16,10 @@ import type {
     ProductUpdateRequest,
 } from '../../types/product';
 import {
-    ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2
+    ChevronLeft, Plus, Trash2, X, Loader2
 } from 'lucide-react';
+import { ImageUpload } from '../../components/ImageUpload';
+import { uploadImage } from '../../api/upload';
 
 // Form State에 맞는 로컬 타입 정의
 interface FormProductInfo {
@@ -33,7 +35,7 @@ interface FormVariantData {
     productId?: number;
     optionValueIds: number[];
     inventory: number;
-    imageUrls: string[];
+    imageUrls: (File | string | null)[];
 }
 
 interface FormState {
@@ -94,7 +96,7 @@ export const AdminProductManagement = () => {
 
     const [formData, setFormData] = useState<FormState>({
         productInfo: { brandId: '', categoryId: '', name: '', code: '', releasePrice: 0, releasedDate: '' },
-        variants: [],
+        variants: [{ optionValueIds: [], inventory: 0, imageUrls: [null] }],
     });
 
     const [brands, setBrands] = useState<Brand[]>([]);
@@ -132,7 +134,7 @@ export const AdminProductManagement = () => {
                             productId: p.productId,
                             inventory: p.inventory,
                             optionValueIds: ids,
-                            imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [''],
+                            imageUrls: p.imageUrls.map(url => url || null), // Map empty strings to null
                         };
                     });
 
@@ -145,12 +147,12 @@ export const AdminProductManagement = () => {
                             releasePrice: productData.productInfo.releasePrice,
                             releasedDate: new Date(productData.productInfo.releaseDate).toISOString().substring(0, 16),
                         },
-                        variants: mappedVariants.length > 0 ? mappedVariants : [{ optionValueIds: [], inventory: 0, imageUrls: [''] }]
+                        variants: mappedVariants.length > 0 ? mappedVariants : [{ optionValueIds: [], inventory: 0, imageUrls: [null] }] // New product variant starts with null
                     });
                 } else {
                      setFormData({
                         productInfo: { brandId: '', categoryId: '', name: '', code: '', releasePrice: 0, releasedDate: '' },
-                        variants: [{ optionValueIds: [], inventory: 0, imageUrls: [''] }],
+                        variants: [{ optionValueIds: [], inventory: 0, imageUrls: [null] }], // New product variant starts with null
                     });
                 }
             } catch (err) {
@@ -184,7 +186,7 @@ export const AdminProductManagement = () => {
     const addVariant = () => {
         setFormData(prev => ({
             ...prev,
-            variants: [...prev.variants, { optionValueIds: [], inventory: 0, imageUrls: [''] }],
+            variants: [...prev.variants, { optionValueIds: [], inventory: 0, imageUrls: [null] }],
         }));
     };
 
@@ -199,7 +201,7 @@ export const AdminProductManagement = () => {
         }));
     };
 
-    const handleImageUrlChange = (variantIndex: number, imageIndex: number, value: string) => {
+    const handleImageUrlChange = (variantIndex: number, imageIndex: number, value: File | string | null) => {
         const newVariants = [...formData.variants];
         newVariants[variantIndex].imageUrls[imageIndex] = value;
         setFormData(prev => ({ ...prev, variants: newVariants }));
@@ -207,11 +209,11 @@ export const AdminProductManagement = () => {
 
     const addImageUrl = (variantIndex: number) => {
         const newVariants = [...formData.variants];
-        newVariants[variantIndex].imageUrls.push('');
+        newVariants[variantIndex].imageUrls.push(null);
         setFormData(prev => ({ ...prev, variants: newVariants }));
     };
 
-    const removeImageUrl = (variantIndex: number, imageIndex: number) => {
+    const removeImageSlot = (variantIndex: number, imageIndex: number) => {
         if (formData.variants[variantIndex].imageUrls.length <= 1) {
             alert('최소 하나 이상의 이미지가 필요합니다.');
             return;
@@ -272,11 +274,6 @@ export const AdminProductManagement = () => {
             alert("상품 기본 정보를 모두 입력해주세요.");
             return;
         }
-
-        if (formData.variants.some(v => v.imageUrls.some(url => !url))) {
-            alert('모든 이미지 URL을 입력해주세요.');
-            return;
-        }
         
         if (formData.variants.some(v => v.optionValueIds.length !== groupedOptions.length)) {
             alert(`모든 옵션 그룹에 대해 값을 하나씩 선택해주세요. (총 ${groupedOptions.length}개)`);
@@ -285,6 +282,34 @@ export const AdminProductManagement = () => {
 
         setIsSubmitting(true);
         try {
+            const processedVariants = await Promise.all(
+                formData.variants.map(async (variant) => {
+                    const uploadedImageUrls: string[] = [];
+                    for (const urlOrFile of variant.imageUrls) {
+                        if (urlOrFile instanceof File) {
+                            // Upload new file
+                            const imageUrl = await uploadImage(urlOrFile, 'products');
+                            uploadedImageUrls.push(imageUrl);
+                        } else if (typeof urlOrFile === 'string' && urlOrFile.trim() !== '') {
+                            // Keep existing URL
+                            uploadedImageUrls.push(urlOrFile);
+                        }
+                        // Ignore nulls
+                    }
+
+                    return {
+                        ...variant,
+                        imageUrls: uploadedImageUrls,
+                    };
+                })
+            );
+            
+            // Validate after processing: each variant must have at least one image
+            if (processedVariants.some(v => v.imageUrls.length === 0)) {
+                alert('각 상품 옵션에는 최소 하나의 이미지가 필요합니다.');
+                return;
+            }
+
             const payload: ProductCreateRequest | ProductUpdateRequest = {
                 productInfo: {
                     ...formData.productInfo,
@@ -293,10 +318,7 @@ export const AdminProductManagement = () => {
                     releasePrice: Number(formData.productInfo.releasePrice),
                     releasedDate: new Date(formData.productInfo.releasedDate).toISOString()
                 },
-                variants: formData.variants.map(v => ({
-                    ...v,
-                    imageUrls: v.imageUrls.filter(url => url.trim() !== '')
-                })),
+                variants: processedVariants,
             };
 
             if (isEditing && productInfoId) {
@@ -307,9 +329,9 @@ export const AdminProductManagement = () => {
                 alert('상품이 등록되었습니다.');
             }
             navigate('/admin/products');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to save product:', error);
-            alert('상품 저장에 실패했습니다.');
+            alert(`상품 저장에 실패했습니다: ${error.message || '알 수 없는 오류'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -394,24 +416,36 @@ export const AdminProductManagement = () => {
                                             </div>
                                         </FormField>
 
-                                        {/* 이미지 URL */}
+                                        {/* 이미지 */}
                                         <div className="md:col-span-2">
-                                            <FormField label="이미지 URL">
-                                                <div className="space-y-3">
+                                            <FormField label="이미지">
+                                                <div className="flex flex-wrap gap-4">
                                                     {variant.imageUrls.map((url, iIdx) => (
-                                                        <div key={iIdx} className="flex items-center gap-2">
-                                                            <StyledInput type="url" placeholder="https://example.com/image.jpg" value={url} onChange={e => handleImageUrlChange(vIdx, iIdx, e.target.value)} required />
-                                                            <button type="button" onClick={() => removeImageUrl(vIdx, iIdx)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors flex-shrink-0">
-                                                                <Trash2 size={16} />
-                                                            </button>
+                                                        <div key={iIdx} className="relative">
+                                                            <ImageUpload
+                                                                value={(typeof url === 'string' ? url : (url ? URL.createObjectURL(url) : undefined))}
+                                                                onFileSelect={(file) => handleImageUrlChange(vIdx, iIdx, file)}
+                                                                onRemove={() => handleImageUrlChange(vIdx, iIdx, null)}
+                                                            />
+                                                            {variant.imageUrls.length > 1 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeImageSlot(vIdx, iIdx)}
+                                                                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-md hover:bg-red-600 transition-colors z-10"
+                                                                    aria-label="이미지 슬롯 삭제"
+                                                                >
+                                                                    <X size={14} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     ))}
                                                     <button
                                                         type="button"
                                                         onClick={() => addImageUrl(vIdx)}
-                                                        className="w-full mt-2 flex items-center justify-center gap-2 text-sm font-medium text-gray-500 bg-white border-2 border-dashed border-gray-300 rounded-lg py-3 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                                                        className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-accent hover:text-accent transition-colors"
                                                     >
-                                                        <ImageIcon size={16} /> 이미지 URL 추가
+                                                        <Plus size={24} />
+                                                        <span className="text-xs mt-1">이미지 추가</span>
                                                     </button>
                                                 </div>
                                             </FormField>

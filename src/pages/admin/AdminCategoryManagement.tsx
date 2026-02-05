@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/product';
 import type { CategoryResponse } from '../../types/product';
 import { ChevronLeft, Trash2, Edit, Loader2, Image as ImageIcon } from 'lucide-react';
+import { ImageUpload } from '../../components/ImageUpload';
+import { uploadImage } from '../../api/upload';
 
 // Reusable Components (from brand management)
 const FormCard: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className }) => (
@@ -37,7 +39,7 @@ const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void,
 
 interface CategoryFormData {
     name: string;
-    imageUrl: string;
+    imageUrl: File | string | null;
 }
 
 export const AdminCategoryManagement = () => {
@@ -49,7 +51,7 @@ export const AdminCategoryManagement = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [selectedCategory, setSelectedCategory] = useState<CategoryResponse | null>(null);
-    const [formData, setFormData] = useState<CategoryFormData>({ name: '', imageUrl: '' });
+    const [formData, setFormData] = useState<CategoryFormData>({ name: '', imageUrl: null });
 
     const fetchCategories = useCallback(async () => {
         setIsLoading(true);
@@ -72,10 +74,10 @@ export const AdminCategoryManagement = () => {
         if (selectedCategory) {
             setFormData({
                 name: selectedCategory.name,
-                imageUrl: selectedCategory.imageUrl || ''
+                imageUrl: selectedCategory.imageUrl || null // Can be null now
             });
         } else {
-            setFormData({ name: '', imageUrl: '' });
+            setFormData({ name: '', imageUrl: null }); // Can be null now
         }
     }, [selectedCategory]);
 
@@ -92,20 +94,28 @@ export const AdminCategoryManagement = () => {
         }
         setIsSubmitting(true);
         try {
+            let finalImageUrl: string | null = null;
+            if (formData.imageUrl instanceof File) {
+                finalImageUrl = await uploadImage(formData.imageUrl, 'categories');
+            } else if (typeof formData.imageUrl === 'string') {
+                finalImageUrl = formData.imageUrl;
+            }
+
             if (selectedCategory) {
                 // Update
-                await updateCategory(selectedCategory.categoryId, { name: formData.name, imageUrl: formData.imageUrl });
+                await updateCategory(selectedCategory.categoryId, { name: formData.name, imageUrl: finalImageUrl });
                 alert('카테고리가 수정되었습니다.');
             } else {
                 // Create
-                await createCategory({ name: formData.name, imageUrl: formData.imageUrl });
+                await createCategory({ name: formData.name, imageUrl: finalImageUrl });
                 alert('카테고리가 생성되었습니다.');
             }
             setSelectedCategory(null);
-            setFormData({ name: '', imageUrl: '' });
+            setFormData({ name: '', imageUrl: null }); // Reset form
             await fetchCategories(); // Refresh list
         } catch (err) {
             alert(`오류가 발생했습니다: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            console.error(err);
         } finally {
             setIsSubmitting(false);
         }
@@ -151,8 +161,13 @@ export const AdminCategoryManagement = () => {
                                     <FormField label="카테고리 이름">
                                         <StyledInput name="name" value={formData.name} onChange={handleInputChange} required />
                                     </FormField>
-                                    <FormField label="이미지 URL (선택)">
-                                        <StyledInput name="imageUrl" type="url" placeholder="https://example.com/image.png" value={formData.imageUrl} onChange={handleInputChange} />
+                                    <FormField label="카테고리 이미지">
+                                        <ImageUpload
+                                            value={typeof formData.imageUrl === 'string' ? formData.imageUrl : undefined}
+                                            onFileSelect={(file) => setFormData(prev => ({ ...prev, imageUrl: file }))}
+                                            onRemove={() => setFormData(prev => ({ ...prev, imageUrl: null }))}
+                                            label="카테고리 이미지"
+                                        />
                                     </FormField>
                                     <div className="flex flex-col gap-3 pt-4">
                                        <PrimaryButton type="submit" disabled={isSubmitting}>

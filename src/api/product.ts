@@ -113,7 +113,7 @@ export const getOptions = async (): Promise<OptionGroupResponse[]> => {
 
 // 브랜드 생성
 
-export const createBrand = async (brandData: { name: string; logoUrl?: string }) => {
+export const createBrand = async (brandData: { name: string; logoUrl?: string | null }) => {
 
     // API는 배열을 받으므로 배열로 감싸서 전송
 
@@ -131,7 +131,7 @@ export const createBrand = async (brandData: { name: string; logoUrl?: string })
 
 // 브랜드 수정
 
-export const updateBrand = async (brandId: number, brandData: { name: string; logoUrl?: string }) => {
+export const updateBrand = async (brandId: number, brandData: { name: string; logoUrl?: string | null }) => {
 
     const response = await axiosInstance.put(`/api/v1/products/brands/${brandId}`, brandData);
 
@@ -154,7 +154,7 @@ export const deleteBrand = async (brandId: number) => {
 // --- 카테고리 관리 API ---
 
 // 카테고리 생성
-export const createCategory = async (categoryData: { name: string; imageUrl?: string }) => {
+export const createCategory = async (categoryData: { name: string; imageUrl?: string | null }) => {
     // API는 배열을 받으므로 배열로 감싸서 전송
     const response = await axiosInstance.post('/api/v1/products/categories', {
         categories: [categoryData]
@@ -163,7 +163,7 @@ export const createCategory = async (categoryData: { name: string; imageUrl?: st
 };
 
 // 카테고리 수정
-export const updateCategory = async (categoryId: number, categoryData: { name: string; imageUrl?: string }) => {
+export const updateCategory = async (categoryId: number, categoryData: { name: string; imageUrl?: string | null }) => {
     const response = await axiosInstance.put(`/api/v1/products/categories/${categoryId}`, categoryData);
     return response.data;
 };
