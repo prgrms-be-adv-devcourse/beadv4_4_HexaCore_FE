@@ -282,27 +282,55 @@ export const AdminProductManagement = () => {
 
         setIsSubmitting(true);
         try {
-            const processedVariants = await Promise.all(
-                formData.variants.map(async (variant) => {
-                    const uploadedImageUrls: string[] = [];
-                    for (const urlOrFile of variant.imageUrls) {
-                        if (urlOrFile instanceof File) {
-                            // Upload new file
-                            const imageUrl = await uploadImage(urlOrFile, 'products');
-                            uploadedImageUrls.push(imageUrl);
-                        } else if (typeof urlOrFile === 'string' && urlOrFile.trim() !== '') {
-                            // Keep existing URL
-                            uploadedImageUrls.push(urlOrFile);
-                        }
-                        // Ignore nulls
-                    }
+            // Collect all files to upload from all variants
+            const filesToUpload: { file: File; variantIndex: number; imageIndex: number }[] = [];
+            const existingImageUrls: { url: string; variantIndex: number; imageIndex: number }[] = [];
 
-                    return {
-                        ...variant,
-                        imageUrls: uploadedImageUrls,
-                    };
-                })
-            );
+            formData.variants.forEach((variant, vIdx) => {
+                variant.imageUrls.forEach((urlOrFile, iIdx) => {
+                    if (urlOrFile instanceof File) {
+                        filesToUpload.push({ file: urlOrFile, variantIndex: vIdx, imageIndex: iIdx });
+                    } else if (typeof urlOrFile === 'string' && urlOrFile.trim() !== '') {
+                        existingImageUrls.push({ url: urlOrFile, variantIndex: vIdx, imageIndex: iIdx });
+                    }
+                });
+            });
+
+            let uploadedUrls: string[] = [];
+            if (filesToUpload.length > 0) {
+                const actualFiles = filesToUpload.map(item => item.file);
+                uploadedUrls = await uploadImage(actualFiles, 'PRODUCT');
+            }
+
+            const processedVariants = formData.variants.map((variant, vIdx) => {
+                const newImageUrls: string[] = [];
+
+                variant.imageUrls.forEach((_, iIdx) => {
+                    // Check if this image was an uploaded file
+                    const uploadedFileMapping = filesToUpload.find(
+                        item => item.variantIndex === vIdx && item.imageIndex === iIdx
+                    );
+                    if (uploadedFileMapping) {
+                        const uploadedUrlIndex = filesToUpload.indexOf(uploadedFileMapping);
+                        if (uploadedUrls[uploadedUrlIndex]) {
+                            newImageUrls.push(uploadedUrls[uploadedUrlIndex]);
+                        }
+                    } else {
+                        // Check if this image was an existing URL
+                        const existingUrlMapping = existingImageUrls.find(
+                            item => item.variantIndex === vIdx && item.imageIndex === iIdx
+                        );
+                        if (existingUrlMapping) {
+                            newImageUrls.push(existingUrlMapping.url);
+                        }
+                    }
+                });
+
+                return {
+                    ...variant,
+                    imageUrls: newImageUrls,
+                };
+            });
             
             // Validate after processing: each variant must have at least one image
             if (processedVariants.some(v => v.imageUrls.length === 0)) {

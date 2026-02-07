@@ -96,9 +96,18 @@ export const AdminCategoryManagement = () => {
         try {
             let finalImageUrl: string | null = null;
             if (formData.imageUrl instanceof File) {
-                finalImageUrl = await uploadImage(formData.imageUrl, 'categories');
+                const uploadedUrls = await uploadImage([formData.imageUrl], 'CATEGORY');
+                if (uploadedUrls.length > 0) {
+                    finalImageUrl = uploadedUrls[0];
+                }
             } else if (typeof formData.imageUrl === 'string') {
                 finalImageUrl = formData.imageUrl;
+            }
+
+            if (!finalImageUrl) {
+                alert('카테고리 이미지를 업로드하거나 선택해주세요.');
+                setIsSubmitting(false);
+                return;
             }
 
             if (selectedCategory) {

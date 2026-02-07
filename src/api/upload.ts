@@ -1,17 +1,20 @@
 import axios from './axios';
 
-export const uploadImage = async (file: File, folder?: string): Promise<string> => {
+export const uploadImage = async (files: File[], category: string): Promise<string[]> => {
     const formData = new FormData();
-    formData.append('image', file);
-    if (folder) {
-        formData.append('folder', folder);
-    }
+    files.forEach((file) => {
+        formData.append('images', file);
+    });
 
-    // Assuming the backend endpoint for image upload is /api/v1/images/upload
-    const response = await axios.post('/api/v1/images/upload', formData, {
+    const response = await axios.post(`/api/v1/products/images/upload/${category}`, formData, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
     });
-    return response.data.url; // Assuming the backend returns { url: '...' }
+    console.log('Image upload response:', response);
+    if (response.data && response.data.data && Array.isArray(response.data.data.fileUrl)) { // Check if it's an array, even if empty
+        return response.data.data.fileUrl;
+    } else {
+        throw new Error('Image upload response did not contain a valid file URL array.');
+    }
 };

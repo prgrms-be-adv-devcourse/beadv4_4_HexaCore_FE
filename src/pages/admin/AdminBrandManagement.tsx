@@ -96,9 +96,18 @@ export const AdminBrandManagement = () => {
         try {
             let finalLogoUrl: string | null = null;
             if (formData.logoUrl instanceof File) {
-                finalLogoUrl = await uploadImage(formData.logoUrl, 'brands');
+                const uploadedUrls = await uploadImage([formData.logoUrl], 'BRAND');
+                if (uploadedUrls.length > 0) {
+                    finalLogoUrl = uploadedUrls[0];
+                }
             } else if (typeof formData.logoUrl === 'string') {
                 finalLogoUrl = formData.logoUrl;
+            }
+
+            if (!finalLogoUrl) {
+                alert('로고 이미지를 업로드하거나 선택해주세요.');
+                setIsSubmitting(false);
+                return;
             }
 
             if (selectedBrand) {
