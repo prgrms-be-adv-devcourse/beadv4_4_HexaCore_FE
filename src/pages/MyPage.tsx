@@ -5,6 +5,10 @@ import { updateNotificationSettings, getNotificationSettings, getUserProfile, up
 import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '../api/priceAlert';
 import { logout } from '../api/auth';
 import { getWalletBalance, type WalletBalanceResponse } from '../api/cash';
+import { getSellingHistory, getBuyingHistory } from '../api/market';
+
+
+
 
 /* Mock Data for Transactions */
 const TRANSACTIONS = [
@@ -82,6 +86,12 @@ export const MyPage = () => {
     const [wallet, setWallet] = useState<WalletBalanceResponse | null>(null);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [sellingHistory, setSellingHistory] = useState<any[]>([]);
+    const [isSellingLoading, setIsSellingLoading] = useState(false);
+    const [buyingHistory, setBuyingHistory] = useState<any[]>([]);
+    const [isBuyingLoading, setIsBuyingLoading] = useState(false);
+
+
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -209,6 +219,41 @@ export const MyPage = () => {
         setActiveTab(tab);
         setSearchParams({ tab });
     };
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            if (activeTab === 'selling') {
+                setIsSellingLoading(true);
+                try {
+                    const res = await getSellingHistory();
+                    // API 응답 구조: res.data.content 또는 res.content
+                    const content = res.data?.content || res.content || [];
+                    setSellingHistory(content);
+                } catch (error) {
+                    console.error("Failed to fetch selling history:", error);
+                    setSellingHistory([]);
+                } finally {
+                    setIsSellingLoading(false);
+                }
+            } else if (activeTab === 'buying') {
+                setIsBuyingLoading(true);
+                try {
+                    const res = await getBuyingHistory();
+                    // API 응답 구조: res.data.content 또는 res.content
+                    const content = res.data?.content || res.content || [];
+                    setBuyingHistory(content);
+                } catch (error) {
+                    console.error("Failed to fetch buying history:", error);
+                    setBuyingHistory([]);
+                } finally {
+                    setIsBuyingLoading(false);
+                }
+            }
+        };
+        fetchHistory();
+    }, [activeTab]);
+
+
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pt-[120px] pb-24 px-6 lg:px-10 font-pretendard">
@@ -438,39 +483,69 @@ export const MyPage = () => {
                                     {activeTab === 'buying' ? '구매 내역' : '판매 내역'}
                                 </h3>
                                 <div className="space-y-4">
-                                    {(activeTab === 'buying' ? BUYING_HISTORY : SELLING_HISTORY).map(item => (
-                                        <div key={item.id} className="p-6 flex justify-between items-center border border-gray-100 rounded-2xl transition-all hover:bg-gray-50 cursor-pointer group">
-                                            <div className="flex gap-4 items-center">
-                                                <div className="w-16 h-16 bg-gray-50 rounded-xl flex-shrink-0 border border-gray-100 p-2 overflow-hidden">
-                                                    <img
-                                                        src={`https://placehold.co/100x100/png?text=${item.name.split(' ')[0]}`}
-                                                        alt={item.name}
-                                                        className="w-full h-full object-contain mix-blend-multiply"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold group-hover:text-accent transition-colors">{item.name}</div>
-                                                    <div className="text-sm font-medium text-gray-400 flex items-center gap-2 mt-1">
-                                                        <span>사이즈: {item.size}</span>
-                                                        <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                                        <span>{item.date}</span>
+                                    {(activeTab === 'buying' ? isBuyingLoading : isSellingLoading) ? (
+                                        <div className="flex justify-center py-20">
+                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+                                        </div>
+                                    ) : (
+                                        (activeTab === 'buying' ? buyingHistory : sellingHistory).map(item => {
+                                            // API 필드명을 UI 필드명으로 매핑
+                                            const displayItem = {
+                                                id: item.orderId || item.id,
+                                                name: item.productName || item.name,
+                                                imageUrl: item.productImageUrl || item.imageUrl,
+                                                size: item.size,
+                                                date: (item.paymentDate || item.orderDate || item.date)?.split('T')[0] || '-',
+                                                price: item.price,
+                                                status: item.orderStatus || item.status
+                                            };
+
+                                            return (
+                                                <div key={displayItem.id} className="p-6 flex justify-between items-center border border-gray-100 rounded-2xl transition-all hover:bg-gray-50 cursor-pointer group">
+                                                    <div className="flex gap-4 items-center">
+                                                        <div className="w-16 h-16 bg-gray-50 rounded-xl flex-shrink-0 border border-gray-100 p-2 overflow-hidden">
+                                                            <img
+                                                                src={displayItem.imageUrl || `https://placehold.co/100x100/png?text=${displayItem.name?.split(' ')[0] || 'Product'}`}
+                                                                alt={displayItem.name}
+                                                                className="w-full h-full object-contain mix-blend-multiply"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold group-hover:text-accent transition-colors">{displayItem.name}</div>
+                                                            <div className="text-sm font-medium text-gray-400 flex items-center gap-2 mt-1">
+                                                                <span>사이즈: {displayItem.size}</span>
+                                                                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                                <span>{displayItem.date}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right flex flex-col items-end gap-2">
+                                                        <div className="font-black text-lg">{(displayItem.price || 0).toLocaleString()}원</div>
+                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${['배송 완료', '판매 완료', 'COMPLETED'].includes(displayItem.status)
+                                                            ? 'bg-green-100 text-green-600'
+                                                            : ['결제 완료', '검수 중', 'PENDING', 'PAID'].includes(displayItem.status)
+                                                                ? 'bg-accent/10 text-accent'
+                                                                : 'bg-gray-100 text-gray-500'
+                                                            }`}>
+                                                            {displayItem.status === 'COMPLETED' ? '거래 완료' :
+                                                                displayItem.status === 'PENDING' ? '대기 중' :
+                                                                    displayItem.status === 'PAID' ? '결제 완료' :
+                                                                        displayItem.status}
+                                                        </span>
                                                     </div>
                                                 </div>
+                                            );
+                                        })
+                                    )}
+                                    {!(activeTab === 'buying' ? isBuyingLoading : isSellingLoading) &&
+                                        (activeTab === 'buying' ? buyingHistory : sellingHistory).length === 0 && (
+                                            <div className="text-center py-12 text-gray-400">
+                                                {activeTab === 'buying' ? '구매 내역이 없습니다.' : '판매 내역이 없습니다.'}
                                             </div>
-                                            <div className="text-right flex flex-col items-end gap-2">
-                                                <div className="font-black text-lg">{(item.price || 0).toLocaleString()}원</div>
-                                                <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${['배송 완료', '판매 완료'].includes(item.status)
-                                                    ? 'bg-green-100 text-green-600'
-                                                    : ['결제 완료', '검수 중'].includes(item.status)
-                                                        ? 'bg-accent/10 text-accent'
-                                                        : 'bg-gray-100 text-gray-500'
-                                                    }`}>
-                                                    {item.status}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )}
                                 </div>
+
+
                             </section>
                         )}
 

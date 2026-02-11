@@ -29,3 +29,15 @@ export const sellNow = async (productId: number, price: number, size: string) =>
     const response = await axiosInstance.post('/api/v1/market/sell-now', { productId, price, size });
     return response.data;
 };
+
+export const getSellingHistory = async () => {
+    const response = await axiosInstance.get('/api/v1/market/orders/selling');
+    return response.data;
+};
+
+export const getBuyingHistory = async () => {
+    const response = await axiosInstance.get('/api/v1/market/orders/buying');
+    return response.data;
+};
+
+
