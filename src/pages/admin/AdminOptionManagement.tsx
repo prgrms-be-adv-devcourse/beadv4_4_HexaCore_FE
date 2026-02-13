@@ -86,7 +86,7 @@ export const AdminOptionManagement = () => {
         if (selectedGroup) {
             setFormData({
                 name: selectedGroup.group.name,
-                optionValues: selectedGroup.values.map(v => ({ name: v.name }))
+                optionValues: selectedGroup.values.map(v => ({ id: v.id, name: v.name }))
             });
         } else {
             setFormData({ name: '', optionValues: [{ name: '' }] });
