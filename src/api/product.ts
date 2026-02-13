@@ -112,7 +112,7 @@ export const getOptions = async (): Promise<OptionGroupResponse[]> => {
 
 // 브랜드 생성
 
-export const createBrand = async (brandData: { name: string; logoUrl?: string | null }) => {
+export const createBrand = async (brandData: { name: string; imageUrl?: string | null }) => {
 
     // API는 배열을 받으므로 배열로 감싸서 전송
 
@@ -130,7 +130,7 @@ export const createBrand = async (brandData: { name: string; logoUrl?: string | 
 
 // 브랜드 수정
 
-export const updateBrand = async (brandId: number, brandData: { name: string; logoUrl?: string | null }) => {
+export const updateBrand = async (brandId: number, brandData: { name: string; imageUrl?: string | null }) => {
 
     const response = await axiosInstance.put(`/api/v1/products/brands/${brandId}`, brandData);
 

@@ -39,7 +39,7 @@ const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void,
 
 interface BrandFormData {
     name: string;
-    logoUrl: File | string | null;
+    imageUrl: File | string | null;
 }
 
 export const AdminBrandManagement = () => {
@@ -51,7 +51,7 @@ export const AdminBrandManagement = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [selectedBrand, setSelectedBrand] = useState<BrandResponse | null>(null);
-    const [formData, setFormData] = useState<BrandFormData>({ name: '', logoUrl: null });
+    const [formData, setFormData] = useState<BrandFormData>({ name: '', imageUrl: null });
 
     const fetchBrands = useCallback(async () => {
         setIsLoading(true);
@@ -74,10 +74,10 @@ export const AdminBrandManagement = () => {
         if (selectedBrand) {
             setFormData({
                 name: selectedBrand.name,
-                logoUrl: selectedBrand.logoUrl || null // Can be null now
+                imageUrl: selectedBrand.imageUrl || null // Can be null now
             });
         } else {
-            setFormData({ name: '', logoUrl: null }); // Can be null now
+            setFormData({ name: '', imageUrl: null }); // Can be null now
         }
     }, [selectedBrand]);
 
@@ -94,17 +94,17 @@ export const AdminBrandManagement = () => {
         }
         setIsSubmitting(true);
         try {
-            let finalLogoUrl: string | null = null;
-            if (formData.logoUrl instanceof File) {
-                const uploadedUrls = await uploadImage([formData.logoUrl], 'BRAND');
+            let finalImageUrl: string | null = null;
+            if (formData.imageUrl instanceof File) {
+                const uploadedUrls = await uploadImage([formData.imageUrl], 'BRAND');
                 if (uploadedUrls.length > 0) {
-                    finalLogoUrl = uploadedUrls[0];
+                    finalImageUrl = uploadedUrls[0];
                 }
-            } else if (typeof formData.logoUrl === 'string') {
-                finalLogoUrl = formData.logoUrl;
+            } else if (typeof formData.imageUrl === 'string') {
+                finalImageUrl = formData.imageUrl;
             }
 
-            if (!finalLogoUrl) {
+            if (!finalImageUrl) {
                 alert('로고 이미지를 업로드하거나 선택해주세요.');
                 setIsSubmitting(false);
                 return;
@@ -112,15 +112,15 @@ export const AdminBrandManagement = () => {
 
             if (selectedBrand) {
                 // Update
-                await updateBrand(selectedBrand.brandId, { name: formData.name, logoUrl: finalLogoUrl });
+                await updateBrand(selectedBrand.brandId, { name: formData.name, imageUrl: finalImageUrl });
                 alert('브랜드가 수정되었습니다.');
             } else {
                 // Create
-                await createBrand({ name: formData.name, logoUrl: finalLogoUrl });
+                await createBrand({ name: formData.name, imageUrl: finalImageUrl });
                 alert('브랜드가 생성되었습니다.');
             }
             setSelectedBrand(null);
-            setFormData({ name: '', logoUrl: null }); // Reset form
+            setFormData({ name: '', imageUrl: null }); // Reset form
             await fetchBrands(); // Refresh list
         } catch (err) {
             alert(`오류가 발생했습니다: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -172,9 +172,9 @@ export const AdminBrandManagement = () => {
                                     </FormField>
                                     <FormField label="로고 이미지">
                                         <ImageUpload
-                                            value={typeof formData.logoUrl === 'string' ? formData.logoUrl : undefined}
-                                            onFileSelect={(file) => setFormData(prev => ({ ...prev, logoUrl: file }))}
-                                            onRemove={() => setFormData(prev => ({ ...prev, logoUrl: null }))}
+                                            value={typeof formData.imageUrl === 'string' ? formData.imageUrl : undefined}
+                                            onFileSelect={(file) => setFormData(prev => ({ ...prev, imageUrl: file }))}
+                                            onRemove={() => setFormData(prev => ({ ...prev, imageUrl: null }))}
                                             label="로고 이미지"
                                         />
                                     </FormField>
@@ -208,8 +208,8 @@ export const AdminBrandManagement = () => {
                                     {brands.map(brand => (
                                         <div key={brand.brandId} className="flex items-center justify-between bg-gray-50/70 p-4 rounded-xl border border-gray-200/80">
                                             <div className="flex items-center gap-4">
-                                                {brand.logoUrl ? (
-                                                    <img src={brand.logoUrl} alt={brand.name} className="w-10 h-10 object-contain rounded-md" />
+                                                {brand.imageUrl ? (
+                                                    <img src={brand.imageUrl} alt={brand.name} className="w-10 h-10 object-contain rounded-md" />
                                                 ) : (
                                                     <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center">
                                                         <ImageIcon size={20} className="text-gray-400"/>

@@ -70,7 +70,7 @@ export interface CategoryResponse {
 export interface BrandResponse {
     brandId: number;
     name: string;
-    logoUrl?: string;
+    imageUrl?: string;
 }
 
 // 공통 PageResponse 타입 (settlement.ts에서 가져옴)

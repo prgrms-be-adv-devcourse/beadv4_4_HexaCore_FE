@@ -24,7 +24,7 @@ export const AdminProductList = () => {
         try {
             // A large size to fetch "all" products for this admin page.
             // Consider implementing proper pagination if the product list grows very large.
-            const productData = await getProducts({ size: 999, sort: 'LATEST' });
+            const productData = await getProducts({ size: 50, sort: 'LATEST' });
             setProducts(productData.products);
         } catch (err) {
             setError('상품 목록을 불러오는 데 실패했습니다.');
