@@ -117,14 +117,32 @@ export const AdminProductManagement = () => {
                 if (isEditing && productInfoId) {
                     const productData = await getProductDetail(Number(productInfoId));
 
+                    if (!productData || !productData.product || !productData.product.productInfo || !productData.product.products) {
+                        console.error("Product data, product wrapper, product info, or variants not found for ID:", productInfoId);
+                        alert("상품 정보를 찾을 수 없습니다.");
+                        navigate(-1);
+                        return;
+                    }
+
+                    const productInfo = productData.product.productInfo; // Create a local variable for easier access
+                    const rawProducts = productData.product.products;
+
+                    const brandId = productInfo.brand?.brandId ?? '';
+                    const categoryId = productInfo.category?.categoryId ?? '';
+                    const releaseDate = productInfo.releaseDate ? new Date(productInfo.releaseDate).toISOString().substring(0, 16) : '';
+
                     const optionValueMap = new Map<string, number>();
                     optionsData.forEach(group => {
-                        group.optionValues.forEach(val => {
-                            optionValueMap.set(`${group.name}:${val.value}`, val.id);
+                        group.values.forEach(val => {
+                            optionValueMap.set(`${group.group.name}:${val.name}`, val.id);
                         });
                     });
 
-                    const mappedVariants = productData.products.map(p => {
+                    console.log("optionsData:", optionsData);
+                    console.log("optionValueMap:", optionValueMap);
+                    console.log("productData.product.products (raw):", rawProducts);
+
+                    const mappedVariants = (rawProducts || []).map(p => {
                         const ids = p.options.map(opt => {
                             const key = `${opt.groupName}:${opt.value}`;
                             return optionValueMap.get(key);
@@ -137,15 +155,16 @@ export const AdminProductManagement = () => {
                             imageUrls: p.imageUrls.map(url => url || null), // Map empty strings to null
                         };
                     });
+                    console.log("mappedVariants (transformed):", mappedVariants);
 
                     setFormData({
                         productInfo: {
-                            brandId: productData.productInfo.brand.brandId,
-                            categoryId: productData.productInfo.category.categoryId,
-                            name: productData.productInfo.name,
-                            code: productData.productInfo.code,
-                            releasePrice: productData.productInfo.releasePrice,
-                            releasedDate: new Date(productData.productInfo.releaseDate).toISOString().substring(0, 16),
+                            brandId: brandId,
+                            categoryId: categoryId,
+                            name: productInfo.name,
+                            code: productInfo.code,
+                            releasePrice: productInfo.releasePrice,
+                            releasedDate: releaseDate,
                         },
                         variants: mappedVariants.length > 0 ? mappedVariants : [{ optionValueIds: [], inventory: 0, imageUrls: [null] }] // New product variant starts with null
                     });
@@ -235,8 +254,8 @@ export const AdminProductManagement = () => {
 
             let selectedOptionGroupId: number | undefined;
             for (const group of groupedOptions) {
-                if (group.optionValues.some(ov => ov.id === selectedOptionValueId)) {
-                    selectedOptionGroupId = group.id;
+                if (group.values.some(ov => ov.id === selectedOptionValueId)) {
+                    selectedOptionGroupId = group.group.id;
                     break;
                 }
             }
@@ -246,8 +265,8 @@ export const AdminProductManagement = () => {
             updatedOptionValueIds = updatedOptionValueIds.filter(existingId => {
                 let existingOptionGroupId: number | undefined;
                 for (const group of groupedOptions) {
-                    if (group.optionValues.some(ov => ov.id === existingId)) {
-                        existingOptionGroupId = group.id;
+                    if (group.values.some(ov => ov.id === existingId)) {
+                        existingOptionGroupId = group.group.id;
                         break;
                     }
                 }
@@ -425,17 +444,17 @@ export const AdminProductManagement = () => {
                                         <FormField label="옵션 선택">
                                             <div className="space-y-4">
                                                 {groupedOptions.map((group) => (
-                                                    <div key={group.id}>
-                                                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{group.name}</p>
+                                                    <div key={group.group.id}>
+                                                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">{group.group.name}</p>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {group.optionValues.map(opt => (
+                                                            {group.values.map(opt => (
                                                                 <button
                                                                     key={opt.id}
                                                                     type="button"
                                                                     onClick={() => toggleOptionValue(vIdx, opt.id)}
                                                                     className={`px-3 py-1.5 text-sm font-medium rounded-full border-2 transition-all ${variant.optionValueIds.includes(opt.id) ? 'bg-accent border-accent text-white shadow-sm' : 'bg-white border-gray-200 hover:border-gray-400'}`}
                                                                 >
-                                                                    {opt.value}
+                                                                    {opt.name}
                                                                 </button>
                                                             ))}
                                                         </div>

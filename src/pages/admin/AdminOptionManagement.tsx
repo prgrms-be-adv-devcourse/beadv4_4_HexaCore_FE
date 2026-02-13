@@ -9,7 +9,7 @@ import {
     updateOptionValue,
     deleteOptionValue,
 } from '../../api/product';
-import type { OptionGroupResponse, OptionValue } from '../../types/product';
+import type { OptionGroupResponse, ValueDto, GroupDto } from '../../types/product';
 import { ChevronLeft, Trash2, Edit, Loader2, Image as ImageIcon, Plus, X, Tag } from 'lucide-react';
 
 // Reusable Components matching project style
@@ -43,7 +43,9 @@ const PrimaryButton: React.FC<{ children: React.ReactNode, onClick?: () => void,
     </button>
 );
 
-interface OptionValueEdit extends OptionValue {
+interface OptionValueEdit {
+    id?: number;
+    name: string;
     isNew?: boolean;
 }
 
@@ -61,7 +63,7 @@ export const AdminOptionManagement = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [selectedGroup, setSelectedGroup] = useState<OptionGroupResponse | null>(null);
-    const [formData, setFormData] = useState<OptionGroupFormData>({ name: '', optionValues: [{ value: '' }] });
+    const [formData, setFormData] = useState<OptionGroupFormData>({ name: '', optionValues: [{ name: '' }] });
 
     const fetchOptions = useCallback(async () => {
         setIsLoading(true);
@@ -83,11 +85,11 @@ export const AdminOptionManagement = () => {
     useEffect(() => {
         if (selectedGroup) {
             setFormData({
-                name: selectedGroup.name,
-                optionValues: selectedGroup.optionValues.map(v => ({ ...v }))
+                name: selectedGroup.group.name,
+                optionValues: selectedGroup.values.map(v => ({ name: v.name }))
             });
         } else {
-            setFormData({ name: '', optionValues: [{ value: '' }] });
+            setFormData({ name: '', optionValues: [{ name: '' }] });
         }
     }, [selectedGroup]);
 
@@ -97,14 +99,14 @@ export const AdminOptionManagement = () => {
 
     const handleValueChange = (index: number, value: string) => {
         const newValues = [...formData.optionValues];
-        newValues[index].value = value;
+        newValues[index].name = value;
         setFormData(prev => ({ ...prev, optionValues: newValues }));
     };
 
     const addValueField = () => {
         setFormData(prev => ({
             ...prev,
-            optionValues: [...prev.optionValues, { value: '', isNew: true }]
+            optionValues: [...prev.optionValues, { name: '', isNew: true }]
         }));
     };
 
@@ -127,12 +129,12 @@ export const AdminOptionManagement = () => {
             if (selectedGroup) {
                 // --- UPDATE LOGIC ---
                 const promises: Promise<any>[] = [];
-                const originalValues = selectedGroup.optionValues;
-                const currentValues = formData.optionValues.filter(v => v.value && v.value.trim() !== '');
+                const originalValues = selectedGroup.values;
+                const currentValues = formData.optionValues.filter(v => v.name && v.name.trim() !== '');
 
                 // 1. Group name change
-                if (selectedGroup.name !== formData.name) {
-                    promises.push(updateOptionGroupName(selectedGroup.id, { name: formData.name }));
+                if (selectedGroup.group.name !== formData.name) {
+                    promises.push(updateOptionGroupName(selectedGroup.group.id, { name: formData.name }));
                 }
 
                 // 2. Values to delete
@@ -144,18 +146,18 @@ export const AdminOptionManagement = () => {
                 const valuesToUpdate = currentValues.filter(v => {
                     if (!v.id) return false; // Not an existing value
                     const originalValue = originalValues.find(ov => ov.id === v.id);
-                    return originalValue && originalValue.value !== v.value;
+                    return originalValue && originalValue.name !== v.name;
                 });
                 valuesToUpdate.forEach(v => {
-                    if (v.id && v.value) {
-                        promises.push(updateOptionValue(v.id, { optionGroupId: selectedGroup.id, name: v.value }));
+                    if (v.id && v.name) {
+                        promises.push(updateOptionValue(v.id, { optionGroupId: selectedGroup.group.id, name: v.name }));
                     }
                 });
 
                 // 4. Values to add
-                const valuesToAdd = currentValues.filter(v => !v.id && v.value).map(v => v.value!);
+                const valuesToAdd = currentValues.filter(v => !v.id && v.name).map(v => v.name!);
                 if (valuesToAdd.length > 0) {
-                    promises.push(appendOptionValues(selectedGroup.id, { optionValues: valuesToAdd }));
+                    promises.push(appendOptionValues(selectedGroup.group.id, { optionValues: valuesToAdd }));
                 }
 
                 await Promise.all(promises);
@@ -163,7 +165,7 @@ export const AdminOptionManagement = () => {
 
             } else {
                 // --- CREATE LOGIC ---
-                const validValues = formData.optionValues.map(v => v.value!).filter(v => v && v.trim() !== '');
+                const validValues = formData.optionValues.map(v => v.name!).filter(v => v && v.trim() !== '');
                 if (validValues.length === 0) {
                     alert('옵션 값을 하나 이상 입력해주세요.');
                     setIsSubmitting(false);
@@ -228,7 +230,7 @@ export const AdminOptionManagement = () => {
                                             {formData.optionValues.map((val, index) => (
                                                 <div key={val.id || `new-${index}`} className="flex items-center gap-2">
                                                     <StyledInput 
-                                                        value={val.value} 
+                                                        value={val.name} 
                                                         onChange={(e) => handleValueChange(index, e.target.value)} 
                                                         placeholder={`값 #${index + 1}`}
                                                     />
@@ -271,27 +273,27 @@ export const AdminOptionManagement = () => {
                             ) : (
                                 <div className="space-y-4">
                                     {optionGroups.map(group => (
-                                        <div key={group.id} className="bg-gray-50/70 p-5 rounded-xl border border-gray-200/80">
+                                        <div key={group.group.id} className="bg-gray-50/70 p-5 rounded-xl border border-gray-200/80">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="flex items-center gap-3">
                                                      <div className="w-8 h-8 bg-gray-200 rounded-md flex items-center justify-center">
                                                         <Tag size={16} className="text-gray-500"/>
                                                     </div>
-                                                    <span className="font-bold text-gray-800 text-lg">{group.name}</span>
+                                                    <span className="font-bold text-gray-800 text-lg">{group.group.name}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <button onClick={() => handleSelectGroup(group)} className="p-2 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors">
                                                         <Edit size={16} />
                                                     </button>
-                                                    <button onClick={() => handleDelete(group.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
+                                                    <button onClick={() => handleDelete(group.group.id)} className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap gap-2 pl-11">
-                                                {group.optionValues.map(val => (
+                                                {group.values.map(val => (
                                                     <span key={val.id} className="px-3 py-1 text-sm font-medium bg-white border border-gray-200 rounded-full text-gray-600">
-                                                        {val.value}
+                                                        {val.name}
                                                     </span>
                                                 ))}
                                             </div>

@@ -30,12 +30,14 @@ const buildUrl = (endpoint: string, params: Record<string, unknown>): string => 
 export const getProducts = async (filter: ProductFilter = {}): Promise<PaginatedProductList> => {
     const {
         page = 0,
-        size = 20,
+        size = 10, // Default size changed from 20 to 10
         sort = 'LATEST',
-        brandIds = [], // 기본값을 빈 배열로 설정
-        categoryIds = [], // 기본값을 빈 배열로 설정
+        brandIds = [],
+        categoryIds = [],
         excludeSoldOut = false,
-        searchKeyword,
+        searchKeyword, // Keep for now, will map to 'keyword'
+        minPrice,
+        maxPrice,
     } = filter;
 
     // 백엔드 DTO에 맞는 파라미터 객체 생성
@@ -46,7 +48,9 @@ export const getProducts = async (filter: ProductFilter = {}): Promise<Paginated
         brandIds,
         categoryIds,
         excludeSoldOut,
-        keyword: searchKeyword,
+        keyword: searchKeyword, // Map searchKeyword to keyword
+        minPrice,
+        maxPrice,
     };
 
     const url = buildUrl('/api/v1/products', params);
@@ -58,6 +62,14 @@ export const getProducts = async (filter: ProductFilter = {}): Promise<Paginated
 // 상품 상세 조회
 export const getProductDetail = async (productInfoId: number): Promise<ProductDetailResponse> => {
     const response = await axiosInstance.get(`/api/v1/products/${productInfoId}`);
+    return response.data.data;
+};
+
+// 유사 상품 조회
+export const getSimilarProducts = async (productInfoId: number, page: number, size: number): Promise<PageResponse<ProductListResponse>> => {
+    const response = await axiosInstance.get(`/api/v1/products/${productInfoId}/similar`, {
+        params: { page, size }
+    });
     return response.data.data;
 };
 
@@ -89,20 +101,7 @@ export const updateProduct = async (productInfoId: number, productData: ProductU
 
 export const getOptions = async (): Promise<OptionGroupResponse[]> => {
     const response = await axiosInstance.get('/api/v1/products/options');
-    const optionsData = response.data.data.options; 
-
-    if (!Array.isArray(optionsData)) {
-        return []; 
-    }
-
-    return optionsData.map((item: any) => ({
-        id: item.group.id,
-        name: item.group.name,
-        optionValues: item.values.map((v: any) => ({
-            id: v.id,
-            value: v.name, 
-        })),
-    }));
+    return response.data.data.options;
 };
 
 

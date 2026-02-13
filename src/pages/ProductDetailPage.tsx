@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useWishlistStore } from '../store/useWishlistStore';
 import { useCartStore } from '../store/cartStore';
-import { getProductDetail } from '../api/product';
+import { ProductCard } from '../components/ProductCard';
+import { getProductDetail, getSimilarProducts } from '../api/product';
 import { getBuyNowPrice, getSellNowPrice } from '../api/market';
 import {
     Heart,
@@ -15,7 +16,7 @@ import {
     CheckCircle,
     Bell
 } from 'lucide-react';
-import type { ProductDetailResponse, ProductResponse, ProductOption } from '../types/product';
+import type { ProductDetailResponse, ProductResponse, ProductOption, ProductListResponse, PageResponse } from '../types/product';
 import { savePriceAlert } from '../api/priceAlert';
 
 // 사이즈 값 추출 헬퍼 함수
@@ -28,9 +29,11 @@ export const ProductDetailPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse['product'] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [similarProducts, setSimilarProducts] = useState<ProductListResponse[]>([]);
+    const [isSimilarLoading, setIsSimilarLoading] = useState(true);
 
     const { toggleWishlist, wishlistIds } = useWishlistStore();
     const { addItem } = useCartStore();
@@ -58,9 +61,9 @@ export const ProductDetailPage = () => {
             setError(null);
             try {
                 const data = await getProductDetail(Number(id));
-                setProduct(data);
-                if (data.products) {
-                    fetchPricesForAllSizes(data.products);
+                setProduct(data.product);
+                if (data.product?.products) {
+                    fetchPricesForAllSizes(data.product.products);
                 }
             } catch (err) {
                 setError("상품 정보를 불러오는 데 실패했습니다.");
@@ -72,6 +75,25 @@ export const ProductDetailPage = () => {
 
         fetchProduct();
     }, [id]);
+
+    useEffect(() => {
+        if (product?.productInfo?.productInfoId) {
+            const fetchSimilar = async () => {
+                setIsSimilarLoading(true);
+                try {
+                    // 페이지 0, 사이즈 5로 5개 유사 상품 요청
+                    const similarData = await getSimilarProducts(product.productInfo.productInfoId, 0, 5);
+                    setSimilarProducts(similarData.content);
+                } catch (error) {
+                    console.error("Failed to fetch similar products:", error);
+                    setSimilarProducts([]); // 에러 발생 시 빈 배열로 설정
+                } finally {
+                    setIsSimilarLoading(false);
+                }
+            };
+            fetchSimilar();
+        }
+    }, [product]);
 
     const fetchPricesForAllSizes = async (products: ProductResponse[]) => {
         try {
@@ -449,6 +471,24 @@ export const ProductDetailPage = () => {
                         )}
                     </div>
                 </div>
+
+                {!isSimilarLoading && similarProducts.length > 0 && (
+                    <div className="mt-24 border-t border-gray-100 pt-16">
+                        <h2 className="text-2xl font-bold mb-8 text-center text-[#333]">이런 상품은 어때요?</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-12">
+                            {similarProducts.map(p => (
+                                <ProductCard
+                                    key={p.productInfoId}
+                                    id={String(p.productInfoId)}
+                                    brand={p.brandName}
+                                    name={p.productName}
+                                    price={p.lowestAskPrice}
+                                    imageUrl={p.thumbnailUrl}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

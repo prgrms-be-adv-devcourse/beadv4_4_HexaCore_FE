@@ -1,12 +1,17 @@
-export interface OptionGroupResponse {
+// For API responses regarding option management
+export interface GroupDto {
     id: number;
     name: string;
-    optionValues: OptionValue[];
 }
 
-export interface OptionValue {
+export interface ValueDto {
     id: number;
-    value: string;
+    name: string;
+}
+
+export interface OptionGroupResponse {
+    group: GroupDto;
+    values: ValueDto[];
 }
 
 // 상품 개별 옵션 정보
@@ -38,8 +43,10 @@ export interface ProductInfoDto {
 
 // 상품 상세 페이지 전체 API 응답 DTO (백엔드 ProductResponseDto와 일치)
 export interface ProductDetailResponse {
-    productInfo: ProductInfoDto;
-    products: ProductResponse[];
+    product: { // This is ProductDetailDto
+        productInfo: ProductInfoDto;
+        products: ProductResponse[]; // This is where the variants actually are!
+    };
 }
 
 export interface ProductListResponse {
@@ -95,6 +102,8 @@ export interface ProductFilter {
     categoryIds?: number[];
     excludeSoldOut?: boolean;
     sort?: string; // 예: 'LATEST', 'PRICE_LOW'
+    minPrice?: number;
+    maxPrice?: number;
 }
 
 // --- 상품 생성 및 수정 요청 타입 ---
