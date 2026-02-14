@@ -19,7 +19,7 @@ export const CheckoutPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
-    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse['product'] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +44,7 @@ export const CheckoutPage = () => {
             setIsLoading(true);
             try {
                 const data = await getProductDetail(Number(id));
-                setProduct(data);
+                setProduct(data.product);
             } catch (err) {
                 setError("상품 정보를 불러오는 데 실패했습니다.");
                 console.error(err);

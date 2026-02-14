@@ -17,7 +17,7 @@ export const SalesBiddingPage = () => {
     const navigate = useNavigate();
     const size = searchParams.get('size');
 
-    const [product, setProduct] = useState<ProductDetailResponse | null>(null);
+    const [product, setProduct] = useState<ProductDetailResponse['product'] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +40,9 @@ export const SalesBiddingPage = () => {
             setIsLoading(true);
             try {
                 const productData = await getProductDetail(Number(id));
-                setProduct(productData);
+                setProduct(productData.product);
 
-                const variant = productData.products.find(p => getSizeFromOptions(p.options) === size);
+                const variant = productData.product.products.find(p => getSizeFromOptions(p.options) === size);
                 if (variant) {
                     const [sellRes, buyRes] = await Promise.all([
                         getSellNowPrice(variant.productId).catch(() => null),
