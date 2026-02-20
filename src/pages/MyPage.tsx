@@ -501,7 +501,13 @@ export const MyPage = () => {
                                             };
 
                                             return (
-                                                <div key={displayItem.id} className="p-6 flex justify-between items-center border border-gray-100 rounded-2xl transition-all hover:bg-gray-50 cursor-pointer group">
+                                                <div
+                                                    key={displayItem.id}
+                                                    onClick={() => navigate(`/mypage/order/${displayItem.id}`, { state: { isBuying: activeTab === 'buying' } })}
+                                                    className="p-6 flex justify-between items-center border border-gray-100 rounded-2xl transition-all hover:bg-gray-50 cursor-pointer group"
+                                                >
+
+
                                                     <div className="flex gap-4 items-center">
                                                         <div className="w-16 h-16 bg-gray-50 rounded-xl flex-shrink-0 border border-gray-100 p-2 overflow-hidden">
                                                             <img
@@ -521,17 +527,24 @@ export const MyPage = () => {
                                                     </div>
                                                     <div className="text-right flex flex-col items-end gap-2">
                                                         <div className="font-black text-lg">{(displayItem.price || 0).toLocaleString()}원</div>
-                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${['배송 완료', '판매 완료', 'COMPLETED'].includes(displayItem.status)
+                                                        <span className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider ${['COMPLETED', 'DELIVERY_COMPLETED', '배송 완료', '판매 완료'].includes(displayItem.status)
                                                             ? 'bg-green-100 text-green-600'
-                                                            : ['결제 완료', '검수 중', 'PENDING', 'PAID'].includes(displayItem.status)
+                                                            : ['PAID', 'DELIVERY_PROCESSING', '결제 완료', '검수 중', 'PENDING', 'HOLD'].includes(displayItem.status)
                                                                 ? 'bg-accent/10 text-accent'
-                                                                : 'bg-gray-100 text-gray-500'
+                                                                : ['CANCELLED', 'REFUNDED', '취소됨'].includes(displayItem.status)
+                                                                    ? 'bg-red-100 text-red-600'
+                                                                    : 'bg-gray-100 text-gray-500'
                                                             }`}>
                                                             {displayItem.status === 'COMPLETED' ? '거래 완료' :
-                                                                displayItem.status === 'PENDING' ? '대기 중' :
-                                                                    displayItem.status === 'PAID' ? '결제 완료' :
-                                                                        displayItem.status}
+                                                                displayItem.status === 'DELIVERY_COMPLETED' ? '배송 완료' :
+                                                                    displayItem.status === 'DELIVERY_PROCESSING' ? '배송 중' :
+                                                                        displayItem.status === 'PAID' ? '결제 완료' :
+                                                                            displayItem.status === 'PENDING' || displayItem.status === 'HOLD' ? '대기 중' :
+                                                                                displayItem.status === 'CANCELLED' ? '취소됨' :
+                                                                                    displayItem.status === 'REFUNDED' ? '환불됨' :
+                                                                                        displayItem.status}
                                                         </span>
+
                                                     </div>
                                                 </div>
                                             );

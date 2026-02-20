@@ -23,11 +23,13 @@ import { AdminCategoryManagement } from "./pages/admin/AdminCategoryManagement";
 import { AdminOptionManagement } from "./pages/admin/AdminOptionManagement";
 import { SettlementList } from './pages/SettlementList';
 import { SettlementDetail } from './pages/SettlementDetail';
+import { OrderDetailPage } from './pages/OrderDetailPage';
 import { ErrorPage } from './pages/ErrorPage';
 
 
+
 import { useFcm } from './hooks/useFcm';
-import {AdminProductList} from "./pages/admin/AdminProductList.tsx";
+import { AdminProductList } from "./pages/admin/AdminProductList.tsx";
 
 function App() {
   useFcm();
@@ -52,6 +54,8 @@ function App() {
           <Route path="/checkout/:id" element={<CheckoutPage />} />
           <Route path="/mypage/settlement" element={<SettlementList />} />
           <Route path="/mypage/settlement/:settlementId" element={<SettlementDetail />} />
+          <Route path="/mypage/order/:orderId" element={<OrderDetailPage />} />
+
           <Route path="/error" element={<ErrorPage />} />
           <Route path="*" element={<ErrorPage />} />
         </Route>

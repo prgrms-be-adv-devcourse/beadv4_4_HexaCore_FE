@@ -40,4 +40,15 @@ export const getBuyingHistory = async () => {
     return response.data;
 };
 
+export const getOrderDetail = async (orderId: number) => {
+    const response = await axiosInstance.get(`/api/v1/market/orders/${orderId}`);
+    return response.data;
+};
+
+export const completeOrder = async (orderId: number) => {
+    const response = await axiosInstance.patch(`/api/v1/market/orders/${orderId}/complete`);
+    return response.data;
+};
+
+
 
