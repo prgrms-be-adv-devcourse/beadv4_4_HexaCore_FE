@@ -30,6 +30,7 @@ import { ErrorPage } from './pages/ErrorPage';
 
 import { useFcm } from './hooks/useFcm';
 import { AdminProductList } from "./pages/admin/AdminProductList.tsx";
+import { AdminRoute } from './components/auth/AdminRoute';
 
 function App() {
   useFcm();
@@ -60,18 +61,20 @@ function App() {
           <Route path="*" element={<ErrorPage />} />
         </Route>
 
-        {/* Admin 레이아웃 적용 라우트 */}
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="settlement" element={<AdminSettlement />} />
-          <Route path="products" element={<AdminProductList />} />
-          <Route path="product/" element={<AdminProductManagement />} />
-          <Route path="product/:productInfoId" element={<AdminProductManagement />} />
-          <Route path="brands" element={<AdminBrandManagement />} />
-          <Route path="categories" element={<AdminCategoryManagement />} />
-          <Route path="options" element={<AdminOptionManagement />} />
-          <Route path="users" element={<div className="text-center py-20 text-gray-500">회원 관리 페이지 (준비중)</div>} />
-          <Route path="settings" element={<div className="text-center py-20 text-gray-500">설정 페이지 (준비중)</div>} />
+        {/* Admin 레이아웃 적용 라우트 — ROLE_ADMIN 만 접근 가능 */}
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="settlement" element={<AdminSettlement />} />
+            <Route path="products" element={<AdminProductList />} />
+            <Route path="product/" element={<AdminProductManagement />} />
+            <Route path="product/:productInfoId" element={<AdminProductManagement />} />
+            <Route path="brands" element={<AdminBrandManagement />} />
+            <Route path="categories" element={<AdminCategoryManagement />} />
+            <Route path="options" element={<AdminOptionManagement />} />
+            <Route path="users" element={<div className="text-center py-20 text-gray-500">회원 관리 페이지 (준비중)</div>} />
+            <Route path="settings" element={<div className="text-center py-20 text-gray-500">설정 페이지 (준비중)</div>} />
+          </Route>
         </Route>
 
         {/* 결제 결과 페이지: 헤더/푸터 없이 독립적인 화면 구성 */}
