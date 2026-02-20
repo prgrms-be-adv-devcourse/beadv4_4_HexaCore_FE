@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Package, User, Bell, Menu, X, Search } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, User, Bell, Menu, X, Search } from 'lucide-react';
+
 import { Logo } from './Logo';
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
@@ -212,9 +213,10 @@ export const HeaderV2 = () => {
 
                         {showNotifications && <NotificationDropdown />}
 
-                        <Link to="/mypage?tab=delivery" className="p-2.5 rounded-full hover:bg-black/5 transition-colors hidden sm:block">
-                            <Package size={20} strokeWidth={2.5} />
+                        <Link to="/mypage?tab=buying" className="p-2.5 rounded-full hover:bg-black/5 transition-colors hidden sm:block">
+                            <ShoppingBag size={20} strokeWidth={2.5} />
                         </Link>
+
 
                         <Link to="/mypage?tab=profile" className="p-2.5 rounded-full hover:bg-black/5 transition-colors hidden sm:block">
                             <User size={20} strokeWidth={2.5} />
@@ -281,9 +283,10 @@ export const HeaderV2 = () => {
                         <Link to="/cart" className="flex items-center gap-3 font-bold text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
                             <ShoppingCart size={20} /> CART
                         </Link>
-                        <div className="flex items-center gap-3 font-bold text-gray-600 cursor-pointer" onClick={() => { setIsMobileMenuOpen(false); /* Add delivery logic later */ }}>
-                            <Package size={20} /> DELIVERY
-                        </div>
+                        <Link to="/mypage?tab=buying" className="flex items-center gap-3 font-bold text-gray-600" onClick={() => setIsMobileMenuOpen(false)}>
+                            <ShoppingBag size={20} /> BUYING
+                        </Link>
+
                         {isAuthenticated ? (
                             <button onClick={handleLogout} className="col-span-2 bg-gray-100 p-4 rounded-xl font-bold mt-4">LOGOUT</button>
                         ) : (
