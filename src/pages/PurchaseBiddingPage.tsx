@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getProductDetail } from '../api/product';
-import { getBuyNowPrice, getSellNowPrice } from '../api/market';
+import { getAllSizePrices } from '../api/market';
 import { ChevronLeft, AlertCircle, Loader2 } from 'lucide-react';
 import type { ProductDetailResponse, ProductOption } from '../types/product';
 
@@ -25,15 +25,13 @@ export const PurchaseBiddingPage = () => {
     const [bidPrice, setBidPrice] = useState<string>('');
     const [immediatePrice, setImmediatePrice] = useState<number | null>(null);
     const [immediateSellPrice, setImmediateSellPrice] = useState<number | null>(null);
+    const [productId, setProductId] = useState<number | null>(null); // State로 관리
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const productVariant = product?.products.find(p => getSizeFromOptions(p.options) === size);
-    const productId = productVariant?.productId;
 
     useEffect(() => {
         const fetchDetails = async () => {
-            if (!id) {
-                setError("상품 ID가 없습니다.");
+            if (!id || !size) {
+                setError("상품 정보 또는 사이즈가 없습니다.");
                 setIsLoading(false);
                 return;
             }
@@ -42,19 +40,24 @@ export const PurchaseBiddingPage = () => {
                 const productData = await getProductDetail(Number(id));
                 setProduct(productData.product);
 
-                const variant = productData.product.products.find(p => getSizeFromOptions(p.options) === size);
-                if (variant) {
-                    const [buyRes, sellRes] = await Promise.all([
-                        getBuyNowPrice(variant.productId).catch(() => null),
-                        getSellNowPrice(variant.productId).catch(() => null)
-                    ]);
+                // Market API를 통해 현재 사이즈의 정확한 productId와 가격 정보를 한 번에 가져옴
+                const pricesResponse = await getAllSizePrices(productData.product.productInfo.productInfoId);
+                const currentSizeData = pricesResponse.data.find((item: any) => item.productOption === size);
 
-                    const buyNowPrice = buyRes?.data?.buyNowPrice || null;
-                    setImmediatePrice(buyNowPrice);
-                    if (buyNowPrice) {
+                if (currentSizeData) {
+                    setProductId(currentSizeData.productId);
+                    setImmediatePrice(currentSizeData.instantBuyPrice);
+                    setImmediateSellPrice(currentSizeData.instantSellPrice);
+
+                    if (currentSizeData.instantBuyPrice) {
                         setMode('buy');
                     }
-                    setImmediateSellPrice(sellRes?.data?.sellNowPrice || null);
+                } else {
+                    // Fallback: price API에 데이터가 없는 경우 기존 products 배열에서 productId만이라도 찾음
+                    const variant = productData.product.products.find(p => getSizeFromOptions(p.options) === size);
+                    if (variant) {
+                        setProductId(variant.productId);
+                    }
                 }
 
             } catch (err) {
@@ -110,6 +113,9 @@ export const PurchaseBiddingPage = () => {
     const parsedPrice = bidPrice ? parseInt(bidPrice) : 0;
     const displayPrice = mode === 'buy' ? (immediatePrice || 0) : parsedPrice;
     const totalAmount = displayPrice; // Fees are calculated on the next page
+
+    // 렌더링을 위한 variant 찾기 (이미지용)
+    const productVariant = product.products.find(p => getSizeFromOptions(p.options) === size);
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pt-[80px] pb-20 px-4 font-pretendard">

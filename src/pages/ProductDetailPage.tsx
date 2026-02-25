@@ -43,7 +43,7 @@ export const ProductDetailPage = () => {
     const [showToast, setShowToast] = useState(false);
 
     const [allPrices, setAllPrices] = useState<{
-        [size: string]: { buyNow: number | null, sellNow: number | null }
+        [size: string]: { buyNow: number | null, sellNow: number | null, productId: number }
     }>({});
     const [modalMode, setModalMode] = useState<'buy' | 'sell' | 'alert' | null>(null);
     const [targetPrice, setTargetPrice] = useState<string>('');
@@ -101,13 +101,14 @@ export const ProductDetailPage = () => {
             const priceData = response.data; // ProductSizePriceResponseDto[]
 
             const priceMap: {
-                [size: string]: { buyNow: number | null, sellNow: number | null }
+                [size: string]: { buyNow: number | null, sellNow: number | null, productId: number }
             } = {};
 
             priceData.forEach((item: any) => {
                 priceMap[item.productOption] = {
                     buyNow: item.instantBuyPrice,
-                    sellNow: item.instantSellPrice
+                    sellNow: item.instantSellPrice,
+                    productId: item.productId
                 };
             });
             setAllPrices(priceMap);
@@ -184,17 +185,17 @@ export const ProductDetailPage = () => {
 
     const { productInfo } = product;
 
-    const availableSizes = product.products
-        .map(p => getSizeFromOptions(p.options))
-        .filter(s => s !== 'N/A')
-        .sort((a, b) => {
-            const aNum = Number(a);
-            const bNum = Number(b);
-            if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
-            if (!isNaN(aNum)) return -1;
-            if (!isNaN(bNum)) return 1;
-            return a.localeCompare(b);
-        });
+    // DB의 market_product 기준(products)과 실제 입찰 기준(allPrices)을 합쳐서 모든 사이즈 목록 생성
+    // 입찰이 없더라도 상품(market_product)이 존재하면 사이즈가 보여야 함
+    const availableSizes = Array.from(new Set([
+        ...product.products.map(p => getSizeFromOptions(p.options)).filter(s => s !== 'N/A'),
+        ...Object.keys(allPrices)
+    ])).sort((a, b) => {
+        const aNum = Number(a);
+        const bNum = Number(b);
+        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
+        return a.localeCompare(b);
+    });
 
     const validBuyPrices = Object.values(allPrices)
         .map(p => p.buyNow)
@@ -356,22 +357,27 @@ export const ProductDetailPage = () => {
                                         <div className="grid grid-cols-3 gap-3">
                                             {availableSizes.map(size => {
                                                 const sizePrice = allPrices[size];
-                                                const displayPrice = modalMode === 'buy' ? sizePrice?.buyNow : modalMode === 'sell' ? sizePrice?.sellNow : sizePrice?.buyNow;
                                                 const productVariant = product.products.find(p => getSizeFromOptions(p.options) === size);
+
+                                                // 가격 정보는 size-prices API에서 우선적으로 가져옴
+                                                const displayPrice = modalMode === 'buy' ? sizePrice?.buyNow : modalMode === 'sell' ? sizePrice?.sellNow : sizePrice?.buyNow;
+
+                                                // 입찰 데이터(size-prices)가 없어도 상품 정보(products)에 있다면 해당 사이즈는 유효한 것
+                                                const hasVariant = !!sizePrice || !!productVariant;
 
                                                 return (
                                                     <button
                                                         key={size}
                                                         onClick={() => setSelectedSize(size)}
-                                                        disabled={!productVariant}
-                                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border border-solid transition-all group ${!productVariant
+                                                        disabled={!hasVariant}
+                                                        className={`flex flex-col items-center justify-center p-4 rounded-xl border border-solid transition-all group ${!hasVariant
                                                             ? 'bg-gray-50 cursor-not-allowed'
                                                             : selectedSize === size
                                                                 ? 'border-gray-900 bg-white ring-2 ring-gray-900 ring-inset shadow-md'
                                                                 : 'border-gray-100 bg-white hover:border-gray-300 hover:bg-gray-50'
                                                             }`}
                                                     >
-                                                        <span className={`text-[15px] font-bold ${!productVariant
+                                                        <span className={`text-[15px] font-bold ${!hasVariant
                                                             ? 'text-gray-300'
                                                             : selectedSize === size
                                                                 ? 'text-gray-900'
@@ -379,13 +385,13 @@ export const ProductDetailPage = () => {
                                                             }`}>
                                                             {size}
                                                         </span>
-                                                        <span className={`text-[10px] font-bold mt-1 ${!productVariant
+                                                        <span className={`text-[10px] font-bold mt-1 ${!hasVariant
                                                             ? 'text-gray-300'
                                                             : displayPrice
                                                                 ? (modalMode === 'buy' || modalMode === 'alert' ? 'text-red-500' : 'text-green-600')
                                                                 : 'text-gray-300'
                                                             }`}>
-                                                            {productVariant
+                                                            {hasVariant
                                                                 ? (displayPrice ? `${displayPrice.toLocaleString()}` : (modalMode === 'buy' || modalMode === 'alert' ? '구매입찰' : '판매입찰'))
                                                                 : '-'}
                                                         </span>
