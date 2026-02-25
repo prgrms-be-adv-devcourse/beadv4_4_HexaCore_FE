@@ -4,7 +4,7 @@ import { useWishlistStore } from '../store/useWishlistStore';
 import { useCartStore } from '../store/cartStore';
 import { ProductCard } from '../components/ProductCard';
 import { getProductDetail, getSimilarProducts } from '../api/product';
-import { getBuyNowPrice, getSellNowPrice } from '../api/market';
+import { getAllSizePrices } from '../api/market';
 import {
     Heart,
     Share2,
@@ -62,8 +62,8 @@ export const ProductDetailPage = () => {
             try {
                 const data = await getProductDetail(Number(id));
                 setProduct(data.product);
-                if (data.product?.products) {
-                    fetchPricesForAllSizes(data.product.products);
+                if (data.product?.productInfo?.productInfoId) {
+                    fetchPricesForAllSizes(data.product.productInfo.productInfoId);
                 }
             } catch (err) {
                 setError("상품 정보를 불러오는 데 실패했습니다.");
@@ -95,40 +95,28 @@ export const ProductDetailPage = () => {
         }
     }, [product]);
 
-    const fetchPricesForAllSizes = async (products: ProductResponse[]) => {
+    const fetchPricesForAllSizes = async (productInfoId: number) => {
         try {
-            const pricePromises = products.map(async (p) => {
-                const size = getSizeFromOptions(p.options);
-                if (size === 'N/A') return null;
+            const response = await getAllSizePrices(productInfoId);
+            const priceData = response.data; // ProductSizePriceResponseDto[]
 
-                try {
-                    const [buyRes, sellRes] = await Promise.all([
-                        getBuyNowPrice(p.productId).catch(() => ({ data: null })),
-                        getSellNowPrice(p.productId).catch(() => ({ data: null }))
-                    ]);
-                    return {
-                        size,
-                        buyNow: buyRes?.data?.buyNowPrice || null,
-                        sellNow: sellRes?.data?.sellNowPrice || null
-                    };
-                } catch {
-                    return { size, buyNow: null, sellNow: null };
-                }
-            });
-
-            const results = await Promise.all(pricePromises);
             const priceMap: {
                 [size: string]: { buyNow: number | null, sellNow: number | null }
             } = {};
 
-            results.forEach(res => {
-                if (res) priceMap[res.size] = { buyNow: res.buyNow, sellNow: res.sellNow };
+            priceData.forEach((item: any) => {
+                priceMap[item.productOption] = {
+                    buyNow: item.instantBuyPrice,
+                    sellNow: item.instantSellPrice
+                };
             });
             setAllPrices(priceMap);
         } catch (error) {
             console.error("Failed to fetch all size prices:", error);
         }
     };
+
+
 
     const handleNext = (e: React.MouseEvent) => {
         e.stopPropagation();

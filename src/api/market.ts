@@ -10,6 +10,12 @@ export const getSellNowPrice = async (productId: number) => {
     return response.data;
 };
 
+export const getAllSizePrices = async (productInfoId: number) => {
+    const response = await axiosInstance.get(`/api/v1/market/products/${productInfoId}/size-prices`);
+    return response.data;
+};
+
+
 export const registerBuyBid = async (productId: number, price: number, size: string) => {
     const response = await axiosInstance.post('/api/v1/market/bids/buy', { productId, price, size });
     return response.data;
