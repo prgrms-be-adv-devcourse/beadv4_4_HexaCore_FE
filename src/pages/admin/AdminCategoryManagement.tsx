@@ -172,7 +172,7 @@ export const AdminCategoryManagement = () => {
                                     </FormField>
                                     <FormField label="카테고리 이미지">
                                         <ImageUpload
-                                            value={typeof formData.imageUrl === 'string' ? formData.imageUrl : undefined}
+                                            value={formData.imageUrl}
                                             onFileSelect={(file) => setFormData(prev => ({ ...prev, imageUrl: file }))}
                                             onRemove={() => setFormData(prev => ({ ...prev, imageUrl: null }))}
                                             label="카테고리 이미지"

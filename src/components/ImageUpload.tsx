@@ -2,8 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ImageIcon, X } from 'lucide-react';
 
 interface ImageUploadProps {
-    value?: string; // This is the URL from S3 or previous state, or a temporary local URL
-    onFileSelect: (file: File | null) => void; // New prop to pass selected File object
+    value?: string | File | null; // Changed to accept File or string or null
+    onFileSelect: (file: File | null) => void;
     onRemove: () => void;
     label?: string;
 }
@@ -11,43 +11,45 @@ interface ImageUploadProps {
 export const ImageUpload: React.FC<ImageUploadProps> = ({ value, onFileSelect, onRemove }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [localFile, setLocalFile] = useState<File | null>(null); // To hold the selected file locally
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        // If a new value (URL) is provided, update previewUrl
-        if (typeof value === 'string' && value !== previewUrl) {
+        let objectUrl: string | null = null;
+
+        if (typeof value === 'string') {
             setPreviewUrl(value);
-            setLocalFile(null); // Clear any locally selected file if an external URL is set
-        } else if (!value && !localFile) {
-            setPreviewUrl(null); // Clear preview if no value or localFile
+        } else if (value instanceof File) {
+            objectUrl = URL.createObjectURL(value);
+            setPreviewUrl(objectUrl);
+        } else {
+            setPreviewUrl(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
-    }, [value, localFile, previewUrl]);
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+            }
+        };
+    }, [value]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files || files.length === 0) {
-            setLocalFile(null);
-            setPreviewUrl(null);
             onFileSelect(null);
-            if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         const file = files[0];
         if (!file.type.startsWith('image/')) {
             setError('이미지 파일만 업로드할 수 있습니다.');
-            setLocalFile(null);
-            setPreviewUrl(null);
             onFileSelect(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         setError(null);
-        setLocalFile(file);
-        setPreviewUrl(URL.createObjectURL(file)); // Create a local preview URL
-        onFileSelect(file); // Pass the File object to the parent
+        onFileSelect(file);
     };
 
     const handleClick = () => {
@@ -56,21 +58,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ value, onFileSelect, o
 
     const handleRemove = (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent triggering file input click
-        setLocalFile(null);
-        setPreviewUrl(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
         onRemove(); // Notify parent to clear its state
     };
 
-    const displayImageSrc = localFile ? URL.createObjectURL(localFile) : previewUrl;
-
     return (
         <div className="space-y-2">
-            {(displayImageSrc) ? (
+            {previewUrl ? (
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
-                    <img src={displayImageSrc} alt="Uploaded" className="object-cover w-full h-full" />
+                    <img src={previewUrl} alt="Uploaded" className="object-cover w-full h-full" />
                     <button
                         type="button"
                         onClick={handleRemove}
@@ -98,7 +93,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ value, onFileSelect, o
                     )}
                 </div>
             )}
-            {error && !displayImageSrc && (
+            {error && !previewUrl && (
                 <p className="text-red-500 text-xs">{error}</p>
             )}
         </div>

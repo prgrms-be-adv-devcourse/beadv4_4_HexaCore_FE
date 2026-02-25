@@ -172,7 +172,7 @@ export const AdminBrandManagement = () => {
                                     </FormField>
                                     <FormField label="로고 이미지">
                                         <ImageUpload
-                                            value={typeof formData.imageUrl === 'string' ? formData.imageUrl : undefined}
+                                            value={formData.imageUrl}
                                             onFileSelect={(file) => setFormData(prev => ({ ...prev, imageUrl: file }))}
                                             onRemove={() => setFormData(prev => ({ ...prev, imageUrl: null }))}
                                             label="로고 이미지"
