@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getProductDetail } from '../api/product';
 import { registerBuyBid, registerSellBid, buyNow, sellNow } from '../api/market';
+import { failTossPayment } from '../api/cash';
 import { ChevronRight, ChevronLeft, Info, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
 import type { ProductDetailResponse, ProductOption } from '../types/product';
@@ -76,6 +77,7 @@ export const CheckoutPage = () => {
         }
 
         setIsSubmitting(true);
+        let currentTossOrderId: string | null = null;
         try {
             let apiCall;
             if (isSelling) {
@@ -86,6 +88,7 @@ export const CheckoutPage = () => {
 
             const res = await apiCall(Number(productId), itemPrice, size);
             const data = res.data;
+            currentTossOrderId = data.tossOrderId;
 
             if (data.status === 'PAID' || isSelling) {
                 alert(isBid ? `${type} 입찰이 등록되었습니다.` : `${type}가 완료되었습니다.`);
@@ -104,7 +107,17 @@ export const CheckoutPage = () => {
             }
         } catch (error: any) {
             console.error('Action failed:', error);
-            const errorMsg = error.response?.data?.message || '처리에 실패했습니다.';
+
+            // 토스 결제 시도 중 에러가 발생했고 orderId가 있는 경우 서버에 실패 알림
+            if (currentTossOrderId) {
+                failTossPayment(
+                    currentTossOrderId,
+                    error.code || 'PAY_PROCESS_CANCELED',
+                    error.message || '사용자가 결제를 취소하였습니다.'
+                ).catch(err => console.error('Failed to notify server about payment failure:', err));
+            }
+
+            const errorMsg = error.response?.data?.message || error.message || '처리에 실패했습니다.';
             alert(errorMsg);
         } finally {
             setIsSubmitting(false);
