@@ -1,12 +1,22 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { XCircle } from 'lucide-react';
+import { useEffect } from 'react';
+import { failTossPayment } from '../api/cash';
 
 export const PaymentFailPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
+    const orderId = searchParams.get('orderId');
     const code = searchParams.get('code');
     const message = searchParams.get('message');
+
+    useEffect(() => {
+        if (orderId && code && message) {
+            failTossPayment(orderId, code, message)
+                .catch(err => console.error('Failed to notify server about payment failure:', err));
+        }
+    }, [orderId, code, message]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4 font-pretendard">

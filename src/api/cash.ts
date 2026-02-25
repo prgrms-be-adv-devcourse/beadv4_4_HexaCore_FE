@@ -19,3 +19,12 @@ export const confirmTossPayment = async (paymentKey: string, orderId: string, am
     });
     return response.data;
 };
+
+export const failTossPayment = async (orderId: string, code: string, message: string) => {
+    const response = await axiosInstance.post('/api/v1/cash/payments/fail/toss', {
+        orderId,
+        code,
+        message
+    });
+    return response.data;
+};
