@@ -414,13 +414,17 @@ export const ProductDetailPage = () => {
                                                     />
                                                     <button
                                                         onClick={async () => {
-                                                            if (!targetPrice) return;
-                                                            const selectedProduct = product.products.find(p => getSizeFromOptions(p.options) === selectedSize);
-                                                            if (selectedProduct) {
+                                                            if (!targetPrice || !selectedSize) return;
+
+                                                            // allPrices에서 productId를 먼저 찾고, 없으면 products에서 찾기
+                                                            const alertProductId = allPrices[selectedSize]?.productId ||
+                                                                product.products.find(p => getSizeFromOptions(p.options) === selectedSize)?.productId;
+
+                                                            if (alertProductId) {
                                                                 try {
                                                                     await savePriceAlert({
                                                                         targetPrice: Number(targetPrice),
-                                                                        productId: selectedProduct.productId
+                                                                        productId: alertProductId
                                                                     });
                                                                     alert('가격 알림이 설정되었습니다.');
                                                                     setModalMode(null);
@@ -429,6 +433,8 @@ export const ProductDetailPage = () => {
                                                                 } catch (e) {
                                                                     alert('가격 알림 설정에 실패했습니다.');
                                                                 }
+                                                            } else {
+                                                                alert('상품 옵션 정보를 찾을 수 없습니다.');
                                                             }
                                                         }}
                                                         className="w-full h-14 rounded-xl bg-black text-white font-bold text-lg"

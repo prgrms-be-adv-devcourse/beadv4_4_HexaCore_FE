@@ -30,7 +30,8 @@ export const CheckoutPage = () => {
     const isSelling = type === '판매';
 
     const productVariant = product?.products.find(p => getSizeFromOptions(p.options) === size);
-    const productId = productVariant?.productId;
+    // URL에서 productId를 우선적으로 가져오고, 없으면 fallback으로 productVariant에서 가져옴
+    const productId = searchParams.get('productId') || productVariant?.productId;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 

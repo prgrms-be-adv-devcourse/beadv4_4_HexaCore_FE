@@ -98,7 +98,7 @@ export const SalesBiddingPage = () => {
         }
 
         const isBid = mode === 'bid';
-        navigate(`/checkout/${id}?size=${size}&price=${finalPrice}&type=판매&isBid=${isBid}`);
+        navigate(`/checkout/${id}?size=${size}&price=${finalPrice}&type=판매&isBid=${isBid}&productId=${productId}`);
         setIsSubmitting(false);
     };
 
