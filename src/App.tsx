@@ -31,6 +31,7 @@ import { ErrorPage } from './pages/ErrorPage';
 import { useFcm } from './hooks/useFcm';
 import { AdminProductList } from "./pages/admin/AdminProductList.tsx";
 import { AdminRoute } from './components/auth/AdminRoute';
+import { AdminBidSpamLogs } from './pages/admin/AdminBidSpamLogs';
 
 function App() {
   useFcm();
@@ -73,6 +74,7 @@ function App() {
             <Route path="categories" element={<AdminCategoryManagement />} />
             <Route path="options" element={<AdminOptionManagement />} />
             <Route path="users" element={<div className="text-center py-20 text-gray-500">회원 관리 페이지 (준비중)</div>} />
+            <Route path="bid-spam-logs" element={<AdminBidSpamLogs />} />
             <Route path="settings" element={<div className="text-center py-20 text-gray-500">설정 페이지 (준비중)</div>} />
           </Route>
         </Route>

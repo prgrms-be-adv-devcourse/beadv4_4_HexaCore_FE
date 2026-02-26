@@ -22,18 +22,19 @@ const navItems: NavItemType[] = [
         ],
     },
     { path: '/admin/users', label: '회원' },
+    { path: '/admin/bid-spam-logs', label: '입찰 스팸 로그' },
 ];
 
 const NavItem = ({ item, closeSidebar }: { item: NavItemType, closeSidebar?: () => void }) => {
     const location = useLocation();
-    const [isSubmenuOpen, setIsSubmenuOpen] = useState(() => 
+    const [isSubmenuOpen, setIsSubmenuOpen] = useState(() =>
         item.children ? item.children.some(child => location.pathname.startsWith(child.path!)) : false
     );
 
-    const isParentActive = item.children 
+    const isParentActive = item.children
         ? item.children.some(child => location.pathname.startsWith(child.path!))
         : (item.path && location.pathname === item.path) || (!item.exact && item.path && location.pathname.startsWith(item.path));
-        
+
     const handleToggle = () => {
         if (item.children) {
             setIsSubmenuOpen(!isSubmenuOpen);
@@ -47,9 +48,8 @@ const NavItem = ({ item, closeSidebar }: { item: NavItemType, closeSidebar?: () 
             <div>
                 <button
                     onClick={handleToggle}
-                    className={`flex items-center justify-between w-full h-12 px-4 rounded-xl text-[15px] font-medium transition-all ${
-                        isParentActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
-                    }`}
+                    className={`flex items-center justify-between w-full h-12 px-4 rounded-xl text-[15px] font-medium transition-all ${isParentActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
+                        }`}
                 >
                     <span>{item.label}</span>
                     <ChevronDown className={`w-4 h-4 transition-transform ${isSubmenuOpen ? 'rotate-180' : ''}`} />
@@ -62,9 +62,8 @@ const NavItem = ({ item, closeSidebar }: { item: NavItemType, closeSidebar?: () 
                                 to={child.path!}
                                 end={child.exact}
                                 onClick={closeSidebar}
-                                className={({ isActive }) => 
-                                    `flex items-center h-10 px-3 rounded-lg text-sm transition-all ${
-                                        isActive ? 'font-semibold text-gray-800 bg-gray-100' : 'font-medium text-gray-500 hover:bg-gray-100'
+                                className={({ isActive }) =>
+                                    `flex items-center h-10 px-3 rounded-lg text-sm transition-all ${isActive ? 'font-semibold text-gray-800 bg-gray-100' : 'font-medium text-gray-500 hover:bg-gray-100'
                                     }`
                                 }
                             >
@@ -76,15 +75,14 @@ const NavItem = ({ item, closeSidebar }: { item: NavItemType, closeSidebar?: () 
             </div>
         );
     }
-    
+
     return (
         <NavLink
             to={item.path!}
             end={item.exact}
             onClick={handleToggle}
-            className={`flex items-center h-12 px-4 rounded-xl text-[15px] font-medium transition-all ${
-                isParentActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            className={`flex items-center h-12 px-4 rounded-xl text-[15px] font-medium transition-all ${isParentActive ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
         >
             {item.label}
         </NavLink>
