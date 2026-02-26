@@ -6,6 +6,7 @@ import { getPriceAlerts, deletePriceAlert, type PriceAlertResponseDto } from '..
 import { logout } from '../api/auth';
 import { getWalletBalance, type WalletBalanceResponse } from '../api/cash';
 import { getSellingHistory, getBuyingHistory } from '../api/market';
+import { useUserStore } from '../store/userStore';
 
 
 
@@ -81,7 +82,7 @@ export const MyPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const tabParam = searchParams.get('tab');
     const [activeTab, setActiveTab] = useState(tabParam || 'profile');
-    const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+    const { profile, setProfile, fetchProfileIfNeeded } = useUserStore();
     const [draftProfile, setDraftProfile] = useState<UserProfileResponse | null>(null);
     const [wallet, setWallet] = useState<WalletBalanceResponse | null>(null);
     const [isProfileLoading, setIsProfileLoading] = useState(false);
@@ -97,9 +98,8 @@ export const MyPage = () => {
         const fetchProfile = async () => {
             setIsProfileLoading(true);
             try {
-                const data = await getUserProfile();
-                setProfile(data);
-                setDraftProfile({ ...data }); // 수정용 독립 상태 초기화
+                const data = await fetchProfileIfNeeded();
+                if (data) setDraftProfile({ ...data }); // 수정용 독립 상태 초기화
             } catch (error) {
                 console.error("Failed to fetch profile:", error);
             } finally {
@@ -183,7 +183,7 @@ export const MyPage = () => {
         setIsSaving(true);
         try {
             await updateUserProfile(requestBody);
-            // 성공 시 저장된 프로필 상태 업데이트 (사이드바 반영)
+            // 성공 시 저장된 프로필 상태 업데이트 (스토어 및 사이드바 반영)
             const updatedData = await getUserProfile();
             setProfile(updatedData);
             setDraftProfile({ ...updatedData });
@@ -202,6 +202,7 @@ export const MyPage = () => {
 
         try {
             await logout();
+            useUserStore.getState().clearProfile(); // 프로필 정보 초기화
             navigate('/');
         } catch (error) {
             console.error("Logout failed:", error);

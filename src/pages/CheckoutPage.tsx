@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getProductDetail } from '../api/product';
 import { registerBuyBid, registerSellBid, buyNow, sellNow } from '../api/market';
 import { failTossPayment } from '../api/cash';
+import { useUserStore } from '../store/userStore';
 import { ChevronRight, ChevronLeft, Info, Building2, Loader2, AlertCircle } from 'lucide-react';
 import { loadTossPayments } from '@tosspayments/payment-sdk';
 import type { ProductDetailResponse, ProductOption } from '../types/product';
@@ -19,6 +20,7 @@ export const CheckoutPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { profile, fetchProfileIfNeeded, isProfileComplete } = useUserStore();
 
     const [product, setProduct] = useState<ProductDetailResponse['product'] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -42,20 +44,32 @@ export const CheckoutPage = () => {
             setIsLoading(false);
             return;
         }
-        const fetchProduct = async () => {
+        const fetchData = async () => {
             setIsLoading(true);
             try {
-                const data = await getProductDetail(Number(id));
-                setProduct(data.product);
+                // 병렬로 상품 정보와 프로필 정보(필요시) 가져오기
+                const [productData] = await Promise.all([
+                    getProductDetail(Number(id)),
+                    fetchProfileIfNeeded()
+                ]);
+
+                // 필수 정보 체크
+                if (!isProfileComplete()) {
+                    alert("배송지 주소, 연락처, 이름 정보가 필요합니다. 마이페이지에서 정보를 입력해주세요.");
+                    navigate('/mypage?tab=profile');
+                    return;
+                }
+
+                setProduct(productData.product);
             } catch (err) {
-                setError("상품 정보를 불러오는 데 실패했습니다.");
+                setError("정보를 불러오는 데 실패했습니다.");
                 console.error(err);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchProduct();
-    }, [id]);
+        fetchData();
+    }, [id, navigate, fetchProfileIfNeeded, isProfileComplete]);
 
 
     if (isLoading) {
@@ -143,11 +157,11 @@ export const CheckoutPage = () => {
                     <section className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                         <h3 className="text-base font-black text-gray-900 mb-6">{isSelling ? '반송 주소' : '배송 주소'}</h3>
                         <div className="space-y-2 mb-6">
-                            <div className="flex text-sm"><span className="w-24 text-gray-400 font-medium">받는 분</span><span className="font-bold text-gray-900">테스터</span></div>
-                            <div className="flex text-sm"><span className="w-24 text-gray-400 font-medium">연락처</span><span className="font-medium text-gray-900">010-1234-5678</span></div>
+                            <div className="flex text-sm"><span className="w-24 text-gray-400 font-medium">받는 분</span><span className="font-bold text-gray-900">{profile?.name}</span></div>
+                            <div className="flex text-sm"><span className="w-24 text-gray-400 font-medium">연락처</span><span className="font-medium text-gray-900">{profile?.phone}</span></div>
                             <div className="flex text-sm">
                                 <span className="w-24 text-gray-400 font-medium">주소</span>
-                                <span className="font-medium text-gray-900 flex-1 leading-relaxed">[12345] 서울특별시 강남구 테헤란로 427...</span>
+                                <span className="font-medium text-gray-900 flex-1 leading-relaxed">{profile?.address}</span>
                             </div>
                         </div>
                     </section>

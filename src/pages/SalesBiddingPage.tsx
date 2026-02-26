@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getProductDetail } from '../api/product';
 import { getAllSizePrices } from '../api/market';
+import { useUserStore } from '../store/userStore';
 import { ChevronLeft, AlertCircle, Loader2 } from 'lucide-react';
 import type { ProductDetailResponse, ProductOption } from '../types/product';
 
@@ -15,6 +16,7 @@ export const SalesBiddingPage = () => {
     const { id } = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const { fetchProfileIfNeeded, isProfileComplete } = useUserStore();
     const size = searchParams.get('size');
 
     const [product, setProduct] = useState<ProductDetailResponse['product'] | null>(null);
@@ -37,7 +39,18 @@ export const SalesBiddingPage = () => {
             }
             setIsLoading(true);
             try {
-                const productData = await getProductDetail(Number(id));
+                const [productData] = await Promise.all([
+                    getProductDetail(Number(id)),
+                    fetchProfileIfNeeded()
+                ]);
+
+                // 필수 정보 체크
+                if (!isProfileComplete()) {
+                    alert("배송지 주소, 연락처, 이름 정보가 필요합니다. 마이페이지에서 정보를 입력해주세요.");
+                    navigate('/mypage?tab=profile');
+                    return;
+                }
+
                 setProduct(productData.product);
 
                 // Market API를 통해 현재 사이즈의 정확한 productId와 가격 정보를 한 번에 가져옴
@@ -53,15 +66,14 @@ export const SalesBiddingPage = () => {
                         setMode('sell');
                     }
                 } else {
-                    // Fallback: price API에 데이터가 없는 경우 기존 products 배열에서 productId만이라도 찾음
-                    const variant = productData.product.products.find(p => getSizeFromOptions(p.options) === size);
+                    const variant = productData.product.products.find((p: any) => getSizeFromOptions(p.options) === size);
                     if (variant) {
                         setProductId(variant.productId);
                     }
                 }
 
             } catch (err) {
-                setError("상품 정보를 불러오는 데 실패했습니다.");
+                setError("정보를 불러오는 데 실패했습니다.");
                 console.error(err);
             } finally {
                 setIsLoading(false);

@@ -5,6 +5,7 @@ import { useCartStore } from '../store/cartStore';
 import { ProductCard } from '../components/ProductCard';
 import { getProductDetail, getSimilarProducts } from '../api/product';
 import { getAllSizePrices } from '../api/market';
+import { useUserStore } from '../store/userStore';
 import {
     Heart,
     Share2,
@@ -202,6 +203,22 @@ export const ProductDetailPage = () => {
         .filter((p): p is number => p !== null);
 
     const representativePrice = validBuyPrices.length > 0 ? Math.min(...validBuyPrices) : null;
+    const { fetchProfileIfNeeded, isProfileComplete } = useUserStore();
+
+    const checkProfileAndOpenModal = async (mode: 'buy' | 'sell') => {
+        try {
+            await fetchProfileIfNeeded();
+            if (!isProfileComplete()) {
+                alert("배송지 주소, 연락처, 이름 정보가 필요합니다. 마이페이지에서 정보를 입력해주세요.");
+                navigate('/mypage?tab=profile');
+                return;
+            }
+            setModalMode(mode);
+        } catch (error) {
+            console.error("Failed to check profile:", error);
+            alert("사용자 정보를 불러오는 데 실패했습니다.");
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] pt-[100px] pb-32 px-6 lg:px-10 font-pretendard">
@@ -287,13 +304,13 @@ export const ProductDetailPage = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <button
-                                    onClick={() => setModalMode('buy')}
+                                    onClick={() => checkProfileAndOpenModal('buy')}
                                     className="flex flex-col items-center justify-center gap-1 h-[70px] rounded-xl bg-[#222] text-white shadow-lg shadow-black/5 transition-all hover:bg-[#333] hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     <span className="text-lg font-black tracking-tight">구매하기</span>
                                 </button>
                                 <button
-                                    onClick={() => setModalMode('sell')}
+                                    onClick={() => checkProfileAndOpenModal('sell')}
                                     className="flex flex-col items-center justify-center gap-1 h-[70px] rounded-xl bg-accent text-white shadow-lg shadow-accent/20 transition-all hover:bg-[#4a58b0] hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     <span className="text-lg font-black tracking-tight">판매하기</span>
