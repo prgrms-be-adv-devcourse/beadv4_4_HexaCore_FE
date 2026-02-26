@@ -38,6 +38,7 @@ export const ProductDetailPage = () => {
 
     const { toggleWishlist, wishlistIds } = useWishlistStore();
     const { addItem } = useCartStore();
+    const { fetchProfileIfNeeded, isProfileComplete } = useUserStore();
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -84,7 +85,7 @@ export const ProductDetailPage = () => {
                 try {
                     // 페이지 0, 사이즈 5로 5개 유사 상품 요청
                     const similarData = await getSimilarProducts(product.productInfo.productInfoId, 0, 5);
-                    setSimilarProducts(similarData.content);
+                    setSimilarProducts(similarData.products || []);
                 } catch (error) {
                     console.error("Failed to fetch similar products:", error);
                     setSimilarProducts([]); // 에러 발생 시 빈 배열로 설정
@@ -203,7 +204,6 @@ export const ProductDetailPage = () => {
         .filter((p): p is number => p !== null);
 
     const representativePrice = validBuyPrices.length > 0 ? Math.min(...validBuyPrices) : null;
-    const { fetchProfileIfNeeded, isProfileComplete } = useUserStore();
 
     const checkProfileAndOpenModal = async (mode: 'buy' | 'sell') => {
         try {
@@ -489,7 +489,7 @@ export const ProductDetailPage = () => {
                     </div>
                 </div>
 
-                {!isSimilarLoading && similarProducts.length > 0 && (
+                {!isSimilarLoading && similarProducts && similarProducts.length > 0 && (
                     <div className="mt-24 border-t border-gray-100 pt-16">
                         <h2 className="text-2xl font-bold mb-8 text-center text-[#333]">이런 상품은 어때요?</h2>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-12">
@@ -499,7 +499,7 @@ export const ProductDetailPage = () => {
                                     id={String(p.productInfoId)}
                                     brand={p.brandName}
                                     name={p.productName}
-                                    price={p.lowestAskPrice}
+                                    price={p.lowestAskPrice || p.releasePrice}
                                     imageUrl={p.thumbnailUrl}
                                 />
                             ))}
