@@ -8,7 +8,6 @@ import type {
     ProductCreateRequest,
     ProductUpdateRequest,
     OptionGroupResponse,
-    PageResponse,
     ProductListResponse,
 } from '../types/product';
 
@@ -71,7 +70,7 @@ export const getProductDetail = async (productInfoId: number): Promise<ProductDe
 };
 
 // 유사 상품 조회
-export const getSimilarProducts = async (productInfoId: number, page: number, size: number): Promise<PageResponse<ProductListResponse>> => {
+export const getSimilarProducts = async (productInfoId: number, page: number, size: number): Promise<PaginatedProductList> => {
     const response = await axiosInstance.get(`/api/v1/products/${productInfoId}/similar`, {
         params: { page, size }
     });

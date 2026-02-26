@@ -16,7 +16,7 @@ import {
     CheckCircle,
     Bell
 } from 'lucide-react';
-import type { ProductDetailResponse, ProductResponse, ProductOption, ProductListResponse, PageResponse } from '../types/product';
+import type { ProductDetailResponse, ProductResponse, ProductOption, ProductListResponse } from '../types/product';
 import { savePriceAlert } from '../api/priceAlert';
 
 // 사이즈 값 추출 헬퍼 함수
@@ -83,7 +83,7 @@ export const ProductDetailPage = () => {
                 try {
                     // 페이지 0, 사이즈 5로 5개 유사 상품 요청
                     const similarData = await getSimilarProducts(product.productInfo.productInfoId, 0, 5);
-                    setSimilarProducts(similarData.content);
+                    setSimilarProducts(similarData.products);
                 } catch (error) {
                     console.error("Failed to fetch similar products:", error);
                     setSimilarProducts([]); // 에러 발생 시 빈 배열로 설정
@@ -482,7 +482,7 @@ export const ProductDetailPage = () => {
                                     id={String(p.productInfoId)}
                                     brand={p.brandName}
                                     name={p.productName}
-                                    price={p.lowestAskPrice}
+                                    price={p.lowestAskPrice || p.releasePrice}
                                     imageUrl={p.thumbnailUrl}
                                 />
                             ))}
