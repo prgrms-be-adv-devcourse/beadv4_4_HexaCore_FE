@@ -20,6 +20,40 @@ export interface PriceAlertResponseDto {
     targetPrice: number;
     triggeredAt: string | null;
     createdAt: string;
+    productDetail?: {
+        productInfo: {
+            brand: {
+                brandId: number;
+                imageUrl: string;
+                name: string;
+            };
+            category: {
+                categoryId: number;
+                imageUrl: string;
+                name: string;
+            };
+            code: string;
+            name: string;
+            productInfoId: number;
+            releaseDate: string;
+            releasePrice: number;
+        };
+        products: Array<{
+            imageUrls: string[];
+            inventory: number;
+            options: Array<{
+                group: {
+                    id: number;
+                    name: string;
+                };
+                values: Array<{
+                    id: number;
+                    name: string;
+                }>;
+            }>;
+            productId: number;
+        }>;
+    };
 }
 
 export const getPriceAlerts = async () => {

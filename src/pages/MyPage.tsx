@@ -791,18 +791,60 @@ const PriceAlertList = () => {
                     {alerts.map((alert) => (
                         <div key={alert.id} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl transition-all hover:bg-gray-50 bg-white">
                             <div className="flex items-center gap-4">
-                                <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 p-1 overflow-hidden flex items-center justify-center">
-                                    <ShoppingBag className="text-gray-300" size={24} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-[#333]">상품 ID: {alert.productId}</h4>
-                                    <div className="text-sm text-gray-400 mt-1">
-                                        목표 가격: <span className="font-bold text-accent">{alert.targetPrice.toLocaleString()}원</span>
-                                    </div>
-                                    <div className="text-xs text-gray-300 mt-1">
-                                        등록일: {new Date(alert.createdAt).toLocaleDateString()}
-                                    </div>
-                                </div>
+                                {alert.productDetail ? (() => {
+                                    const info = alert.productDetail.productInfo;
+                                    const product = alert.productDetail.products.find(p => p.productId === alert.productId) || alert.productDetail.products[0];
+                                    const imageUrl = product?.imageUrls?.[0] || 'https://placehold.co/100x100/png?text=No+Image';
+
+                                    return (
+                                        <>
+                                            <div className="w-20 h-20 bg-gray-50 rounded-xl flex-shrink-0 border border-gray-100 p-2 overflow-hidden flex items-center justify-center">
+                                                <img src={imageUrl} alt={info.name} className="w-full h-full object-contain mix-blend-multiply" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="text-xs font-bold text-gray-400 mb-1">{info.brand.name}</div>
+                                                <h4 className="font-bold text-[#333] text-base">{info.name}</h4>
+                                                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                                    {product?.options?.map((option, idx) => {
+                                                        const groupName = option.group.name.toLowerCase() === 'size' ? '사이즈' : option.group.name;
+                                                        return (
+                                                            <div key={idx} className="text-sm font-medium text-gray-500">
+                                                                {groupName}: {option.values[0]?.name || '-'}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {(!product?.options || product.options.length === 0) && (
+                                                        <div className="text-sm font-medium text-gray-500">옵션 없음</div>
+                                                    )}
+                                                </div>
+                                                <div className="text-sm text-gray-400 mt-2 flex items-center gap-3">
+                                                    <div>
+                                                        목표가 <span className="font-black text-accent">{alert.targetPrice.toLocaleString()}원</span>
+                                                    </div>
+                                                    <div className="w-px h-3 bg-gray-200"></div>
+                                                    <div className="text-xs text-gray-400">
+                                                        등록일: {new Date(alert.createdAt).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })() : (
+                                    <>
+                                        <div className="w-16 h-16 bg-gray-50 rounded-lg flex-shrink-0 border border-gray-100 p-1 overflow-hidden flex items-center justify-center">
+                                            <ShoppingBag className="text-gray-300" size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-[#333]">상품 ID: {alert.productId}</h4>
+                                            <div className="text-sm text-gray-400 mt-1">
+                                                목표 가격: <span className="font-bold text-accent">{alert.targetPrice.toLocaleString()}원</span>
+                                            </div>
+                                            <div className="text-xs text-gray-300 mt-1">
+                                                등록일: {new Date(alert.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                             <button
                                 onClick={() => handleDelete(alert.id)}
