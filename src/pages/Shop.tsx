@@ -32,7 +32,11 @@ export const Shop = () => {
         searchParams.get('brand') ? Number(searchParams.get('brand')) : null
     );
 
-    const [searchKeyword, setSearchKeyword] = useState(
+    const [searchInput, setSearchInput] = useState(
+        searchParams.get('keyword') || ''
+    );
+
+    const [appliedKeyword, setAppliedKeyword] = useState(
         searchParams.get('keyword') || ''
     );
 
@@ -66,15 +70,10 @@ export const Shop = () => {
         }
     }, []);
 
-    const debouncedFetch = useCallback(
-        debounce(fetchProducts, 300),
-        [fetchProducts]
-    );
-
     useEffect(() => {
         const filters = {
             page,
-            keyword: searchKeyword,
+            keyword: appliedKeyword,
             brandId: activeBrandId,
             categoryId: activeCategoryId
         };
@@ -82,12 +81,18 @@ export const Shop = () => {
         fetchProducts(filters);
 
         const newSearchParams = new URLSearchParams();
-        if (searchKeyword) newSearchParams.set('keyword', searchKeyword);
+        if (appliedKeyword) newSearchParams.set('keyword', appliedKeyword);
         if (activeBrandId) newSearchParams.set('brand', String(activeBrandId));
         if (activeCategoryId) newSearchParams.set('category', String(activeCategoryId));
         setSearchParams(newSearchParams, { replace: true });
 
-    }, [page, searchKeyword, activeBrandId, activeCategoryId, fetchProducts, setSearchParams]);
+    }, [page, appliedKeyword, activeBrandId, activeCategoryId, fetchProducts, setSearchParams]);
+
+    useEffect(() => {
+        const keywordFromUrl = searchParams.get('keyword') || '';
+        setSearchInput(keywordFromUrl);
+        setAppliedKeyword(keywordFromUrl);
+    }, [searchParams]);
 
     useEffect(() => {
         const fetchFilters = async () => {
@@ -108,12 +113,7 @@ export const Shop = () => {
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setPage(0);
-        fetchProducts({
-            page: 0,
-            keyword: searchKeyword,
-            brandId: activeBrandId,
-            categoryId: activeCategoryId
-        });
+        setAppliedKeyword(searchInput);
     };
 
     return (
@@ -122,9 +122,9 @@ export const Shop = () => {
                 <form onSubmit={handleSearch}>
                     <SearchBar
                         placeholder="브랜드, 상품명으로 검색"
-                        value={searchKeyword}
+                        value={searchInput}
                         onChange={(e) => {
-                            setSearchKeyword(e.target.value);
+                            setSearchInput(e.target.value);
                         }}
                     />
                 </form>

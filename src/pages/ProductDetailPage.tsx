@@ -17,7 +17,7 @@ import {
     CheckCircle,
     Bell
 } from 'lucide-react';
-import type { ProductDetailResponse, ProductResponse, ProductOption, ProductListResponse, PageResponse } from '../types/product';
+import type { ProductDetailResponse, ProductResponse, ProductOption, ProductListResponse } from '../types/product';
 import { savePriceAlert } from '../api/priceAlert';
 
 // 사이즈 값 추출 헬퍼 함수

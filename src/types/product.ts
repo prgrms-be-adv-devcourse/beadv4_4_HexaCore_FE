@@ -55,10 +55,10 @@ export interface ProductListResponse {
     brandName: string;
     categoryName: string;
     thumbnailUrl: string;
-    modelNumber: string;
+    modelNumber?: string;
     releasePrice: number;
-    lowestAskPrice: number | null;
-    highestBidPrice: number | null;
+    lowestAskPrice?: number | null;
+    highestBidPrice?: number | null;
 }
 
 export interface CategoryResponse {

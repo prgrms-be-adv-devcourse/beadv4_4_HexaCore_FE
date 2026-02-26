@@ -470,7 +470,7 @@ export const AdminProductManagement = () => {
                                                     {variant.imageUrls.map((url, iIdx) => (
                                                         <div key={iIdx} className="relative">
                                                             <ImageUpload
-                                                                value={(typeof url === 'string' ? url : (url ? URL.createObjectURL(url) : undefined))}
+                                                                value={url}
                                                                 onFileSelect={(file) => handleImageUrlChange(vIdx, iIdx, file)}
                                                                 onRemove={() => handleImageUrlChange(vIdx, iIdx, null)}
                                                             />
