@@ -1,8 +1,8 @@
 // Settlement 관련 타입 정의
 
-export type SettlementStatus = 'PENDING' | 'IN_PROGRESS' | 'HOLD' | 'COMPLETED' | 'FAILED';
+export type SettlementStatus = 'PENDING' | 'HOLD' | 'COMPLETED' | 'FAILED';
 
-export type SettlementItemStatus = 'INCLUDED' | 'CANCELED' | 'REFUNDED' | 'NEGATIVE';
+export type SettlementItemStatus = 'COLLECTED' | 'INCLUDED' | 'CANCELED' | 'REFUNDED' | 'NEGATIVE';
 
 export type SettlementEventType = 'SETTLEMENT_PRODUCT_SALES_AMOUNT' | 'SETTLEMENT_PRODUCT_SALES_FEE';
 

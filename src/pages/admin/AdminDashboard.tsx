@@ -5,7 +5,6 @@ import type { SettlementDashboard, SettlementStatus } from '../../types/settleme
 
 const STATUS_CONFIG: Record<SettlementStatus, { label: string; color: string }> = {
     PENDING: { label: '대기', color: 'bg-amber-400' },
-    IN_PROGRESS: { label: '진행', color: 'bg-blue-500' },
     HOLD: { label: '보류', color: 'bg-orange-400' },
     COMPLETED: { label: '완료', color: 'bg-emerald-500' },
     FAILED: { label: '실패', color: 'bg-red-500' },
@@ -47,7 +46,7 @@ export const AdminDashboard = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <div
                     onClick={() => navigate('/admin/settlement')}
                     className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
@@ -66,8 +65,8 @@ export const AdminDashboard = () => {
                     onClick={() => navigate('/admin/settlement')}
                     className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                 >
-                    <div className="text-sm font-medium text-gray-500 mb-1">진행중</div>
-                    <div className="text-3xl font-bold text-blue-500">{(data?.countByStatus?.IN_PROGRESS || 0).toLocaleString()}</div>
+                    <div className="text-sm font-medium text-gray-500 mb-1">보류</div>
+                    <div className="text-3xl font-bold text-orange-500">{(data?.countByStatus?.HOLD || 0).toLocaleString()}</div>
                 </div>
                 <div
                     onClick={() => navigate('/admin/settlement')}
@@ -75,6 +74,22 @@ export const AdminDashboard = () => {
                 >
                     <div className="text-sm font-medium text-gray-500 mb-1">완료</div>
                     <div className="text-3xl font-bold text-emerald-500">{(data?.countByStatus?.COMPLETED || 0).toLocaleString()}</div>
+                </div>
+                <div
+                    onClick={() => navigate('/admin/settlement')}
+                    className={`rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+                        (data?.countByStatus?.FAILED || 0) > 0
+                            ? 'bg-red-50 border border-red-200'
+                            : 'bg-white'
+                    }`}
+                >
+                    <div className="text-sm font-medium text-gray-500 mb-1">실패</div>
+                    <div className={`text-3xl font-bold ${(data?.countByStatus?.FAILED || 0) > 0 ? 'text-red-600' : 'text-gray-400'}`}>
+                        {(data?.countByStatus?.FAILED || 0).toLocaleString()}
+                    </div>
+                    {(data?.countByStatus?.FAILED || 0) > 0 && (
+                        <div className="text-xs text-red-500 mt-1 font-medium">확인 필요</div>
+                    )}
                 </div>
             </div>
 
@@ -91,7 +106,7 @@ export const AdminDashboard = () => {
                         </button>
                     </div>
                     <div className="space-y-4">
-                        {(['PENDING', 'IN_PROGRESS', 'HOLD', 'COMPLETED', 'FAILED'] as SettlementStatus[]).map((status) => {
+                        {(['PENDING', 'HOLD', 'COMPLETED', 'FAILED'] as SettlementStatus[]).map((status) => {
                             const count = data.countByStatus[status] || 0;
                             const total = data.totalCount || 1;
                             const percent = Math.round((count / total) * 100);

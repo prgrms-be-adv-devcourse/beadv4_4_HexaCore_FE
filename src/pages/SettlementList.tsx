@@ -8,7 +8,6 @@ import './SettlementList.css';
 // 상태별 한글 라벨
 const STATUS_LABELS: Record<SettlementStatus, string> = {
     PENDING: '정산 대기',
-    IN_PROGRESS: '정산 진행중',
     HOLD: '정산 보류',
     COMPLETED: '정산 완료',
     FAILED: '정산 실패',
@@ -161,7 +160,7 @@ export const SettlementList = () => {
                             <div
                                 key={settlement.settlementId}
                                 className="sl-settlement-card"
-                                onClick={() => navigate(`/mypage/settlement/${settlement.settlementId}`)}
+                                onClick={() => navigate(`/mypage/settlement/${settlement.settlementId}`, { state: { settlement } })}
                             >
                                 <div className="sl-settlement-main">
                                     <div className="sl-settlement-period">
@@ -191,6 +190,11 @@ export const SettlementList = () => {
                                     {settlement.status === 'COMPLETED' && settlement.completedAt && (
                                         <span className="sl-settlement-date">
                                             정산 완료: {formatDate(settlement.completedAt)}
+                                        </span>
+                                    )}
+                                    {settlement.status === 'FAILED' && (
+                                        <span className="sl-settlement-date" style={{ color: '#dc2626' }}>
+                                            지급 처리 실패 - 계좌 정보를 확인해주세요
                                         </span>
                                     )}
                                     <ChevronRight size={20} className="sl-arrow-icon" />

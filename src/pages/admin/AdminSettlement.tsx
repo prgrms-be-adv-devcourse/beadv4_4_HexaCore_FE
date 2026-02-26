@@ -12,7 +12,6 @@ import type {
 // 상태별 라벨
 const STATUS_LABELS: Record<SettlementStatus, string> = {
     PENDING: '대기중',
-    IN_PROGRESS: '진행중',
     HOLD: '보류',
     COMPLETED: '완료',
     FAILED: '실패',
@@ -21,7 +20,6 @@ const STATUS_LABELS: Record<SettlementStatus, string> = {
 // 상태별 스타일
 const STATUS_STYLES: Record<SettlementStatus, string> = {
     PENDING: 'bg-yellow-100 text-yellow-800',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800',
     HOLD: 'bg-orange-100 text-orange-800',
     COMPLETED: 'bg-green-100 text-green-800',
     FAILED: 'bg-red-100 text-red-800',
@@ -30,7 +28,6 @@ const STATUS_STYLES: Record<SettlementStatus, string> = {
 // 상태별 아이콘
 const STATUS_ICONS: Record<SettlementStatus, React.ReactNode> = {
     PENDING: <Clock className="w-4 h-4" />,
-    IN_PROGRESS: <Play className="w-4 h-4" />,
     HOLD: <Pause className="w-4 h-4" />,
     COMPLETED: <CheckCircle className="w-4 h-4" />,
     FAILED: <AlertCircle className="w-4 h-4" />,
@@ -38,6 +35,7 @@ const STATUS_ICONS: Record<SettlementStatus, React.ReactNode> = {
 
 // 정산 항목 상태별 라벨
 const ITEM_STATUS_LABELS: Record<string, string> = {
+    COLLECTED: '수집됨',
     INCLUDED: '포함',
     CANCELED: '취소',
     REFUNDED: '환불',
@@ -46,6 +44,7 @@ const ITEM_STATUS_LABELS: Record<string, string> = {
 
 // 정산 항목 상태별 스타일
 const ITEM_STATUS_STYLES: Record<string, string> = {
+    COLLECTED: 'bg-blue-100 text-blue-800',
     INCLUDED: 'bg-green-100 text-green-800',
     CANCELED: 'bg-gray-100 text-gray-800',
     REFUNDED: 'bg-orange-100 text-orange-800',
@@ -191,30 +190,35 @@ export const AdminSettlement = () => {
         setSettlementItems([]);
         setSettlementLogs([]);
 
-        try {
-            // 정산 기간으로 항목 조회
-            const targetSettlement = settlement || settlements?.content.find(s => s.settlementId === settlementId);
+        // 로그와 항목을 독립적으로 조회 (항목 조회 실패가 로그 조회에 영향 주지 않도록)
+        const targetSettlement = settlement || settlements?.content.find(s => s.settlementId === settlementId);
 
-            const [itemsResponse, logs] = await Promise.all([
-                targetSettlement
-                    ? settlementService.getSettlementItems({
-                        startDate: extractDateString(targetSettlement.startAt),
-                        endDate: extractDateString(targetSettlement.endAt),
-                        page: 0,
-                        size: 100,
-                    })
-                    : Promise.resolve({ content: [] as SettlementItem[], totalElements: 0, totalPages: 0, size: 100, number: 0, first: true, last: true, empty: true }),
-                adminSettlementService.getSettlementLogs(settlementId),
-            ]);
-            setSettlementItems(itemsResponse.content);
+        // 로그 조회 (admin API)
+        try {
+            const logs = await adminSettlementService.getSettlementLogs(settlementId);
             setSettlementLogs(logs);
         } catch (error) {
-            console.error('정산 상세 로드 실패:', error);
-            setSettlementItems([]);
+            console.error('정산 로그 로드 실패:', error);
             setSettlementLogs([]);
-        } finally {
-            setDetailLoading(false);
         }
+
+        // 항목 조회 (seller API - 관리자 권한으로 조회 불가할 수 있음)
+        if (targetSettlement) {
+            try {
+                const itemsResponse = await settlementService.getSettlementItems({
+                    startDate: extractDateString(targetSettlement.startAt),
+                    endDate: extractDateString(targetSettlement.endAt),
+                    page: 0,
+                    size: 100,
+                });
+                setSettlementItems(itemsResponse.content);
+            } catch (error) {
+                console.error('정산 항목 로드 실패 (관리자 권한으로는 판매자 항목 조회 불가):', error);
+                setSettlementItems([]);
+            }
+        }
+
+        setDetailLoading(false);
     }, [expandedSettlementId, settlements]);
 
     // 전체 로그 로드
@@ -459,12 +463,42 @@ export const AdminSettlement = () => {
                                     </div>
                                 </div>
 
+                                {/* 실패 정산 알림 배너 */}
+                                {(dashboard.countByStatus['FAILED'] || 0) > 0 && (
+                                    <div
+                                        className="bg-red-50 border border-red-200 rounded-xl p-5 cursor-pointer hover:bg-red-100 transition-colors"
+                                        onClick={() => {
+                                            setFilter({ page: 0, size: 10, status: 'FAILED' });
+                                            setActiveTab('settlements');
+                                        }}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-red-100 rounded-lg">
+                                                <AlertCircle className="w-5 h-5 text-red-600" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold text-red-800">
+                                                    정산 실패 {dashboard.countByStatus['FAILED']}건 확인 필요
+                                                </p>
+                                                <p className="text-xs text-red-600 mt-0.5">
+                                                    지급 처리 중 실패한 정산이 있습니다. DLT(Dead Letter) 처리 내역을 확인하세요.
+                                                </p>
+                                            </div>
+                                            <span className="text-sm font-medium text-red-600">확인하기 →</span>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* 상태별 카드 */}
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                    {(['PENDING', 'IN_PROGRESS', 'HOLD', 'COMPLETED', 'FAILED'] as SettlementStatus[]).map(status => (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    {(['PENDING', 'HOLD', 'COMPLETED', 'FAILED'] as SettlementStatus[]).map(status => (
                                         <div
                                             key={status}
-                                            className="bg-white rounded-xl p-5 shadow-sm border hover:shadow-md transition-shadow cursor-pointer"
+                                            className={`rounded-xl p-5 shadow-sm border hover:shadow-md transition-shadow cursor-pointer ${
+                                                status === 'FAILED' && (dashboard.countByStatus[status] || 0) > 0
+                                                    ? 'bg-red-50 border-red-200'
+                                                    : 'bg-white'
+                                            }`}
                                             onClick={() => {
                                                 setFilter({ page: 0, size: 10, status });
                                                 setActiveTab('settlements');
@@ -476,7 +510,11 @@ export const AdminSettlement = () => {
                                                 </span>
                                                 <span className="text-sm font-medium text-gray-600">{STATUS_LABELS[status]}</span>
                                             </div>
-                                            <p className="text-2xl font-bold text-gray-900">
+                                            <p className={`text-2xl font-bold ${
+                                                status === 'FAILED' && (dashboard.countByStatus[status] || 0) > 0
+                                                    ? 'text-red-600'
+                                                    : 'text-gray-900'
+                                            }`}>
                                                 {(dashboard.countByStatus[status] || 0).toLocaleString()}
                                             </p>
                                         </div>
@@ -649,7 +687,7 @@ export const AdminSettlement = () => {
                                                     <React.Fragment key={settlement.settlementId}>
                                                         <tr
                                                             onClick={() => toggleSettlementDetail(settlement.settlementId, settlement)}
-                                                            className={`hover:bg-gray-50 cursor-pointer transition-colors ${expandedSettlementId === settlement.settlementId ? 'bg-gray-50' : ''}`}
+                                                            className={`hover:bg-gray-50 cursor-pointer transition-colors ${expandedSettlementId === settlement.settlementId ? 'bg-gray-50' : ''} ${settlement.status === 'FAILED' ? 'bg-red-50/50' : ''}`}
                                                         >
                                                             <td className="px-4 py-4 text-sm text-gray-500">
                                                                 {expandedSettlementId === settlement.settlementId ? (
@@ -971,7 +1009,7 @@ export const AdminSettlement = () => {
                                     </thead>
                                     <tbody className="divide-y">
                                         {allLogs.map(log => (
-                                            <tr key={log.logId} className="hover:bg-gray-50">
+                                            <tr key={log.logId} className={`hover:bg-gray-50 ${log.newStatus === 'FAILED' ? 'bg-red-50/50' : ''}`}>
                                                 <td className="px-6 py-4 text-sm text-gray-900">{log.logId}</td>
                                                 <td className="px-6 py-4 text-sm text-gray-900">{log.settlementId}</td>
                                                 <td className="px-6 py-4">
@@ -988,7 +1026,13 @@ export const AdminSettlement = () => {
                                                         {STATUS_LABELS[log.newStatus]}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{log.reason || '-'}</td>
+                                                <td className="px-6 py-4 text-sm max-w-xs truncate">
+                                                    {log.newStatus === 'FAILED' && log.reason ? (
+                                                        <span className="text-red-600 font-medium">{log.reason}</span>
+                                                    ) : (
+                                                        <span className="text-gray-500">{log.reason || '-'}</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-6 py-4">
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                                                         {log.actorType}

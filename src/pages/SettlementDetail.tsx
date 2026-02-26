@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     ArrowLeft, DollarSign, Clock, CheckCircle, AlertCircle,
-    Pause, Play, Calendar, CreditCard, TrendingUp, Package,
+    Pause, Calendar, CreditCard, TrendingUp, Package,
     Search, X, ArrowUpDown
 } from 'lucide-react';
 import { settlementService } from '../services/settlementService';
@@ -14,7 +14,6 @@ import type {
 // 상태별 한글 라벨
 const STATUS_LABELS: Record<SettlementStatus, string> = {
     PENDING: '정산 대기',
-    IN_PROGRESS: '정산 진행중',
     HOLD: '정산 보류',
     COMPLETED: '정산 완료',
     FAILED: '정산 실패',
@@ -22,13 +21,13 @@ const STATUS_LABELS: Record<SettlementStatus, string> = {
 
 const STATUS_DESC: Record<SettlementStatus, string> = {
     PENDING: '정산이 예정되어 있습니다.',
-    IN_PROGRESS: '정산이 처리되고 있습니다.',
     HOLD: '정산이 일시 보류되었습니다.',
     COMPLETED: '정산이 완료되어 입금되었습니다.',
     FAILED: '정산 처리 중 문제가 발생했습니다.',
 };
 
 const ITEM_STATUS_LABELS: Record<SettlementItemStatus, string> = {
+    COLLECTED: '수집됨',
     INCLUDED: '정산 포함',
     CANCELED: '주문 취소',
     REFUNDED: '환불 처리',
@@ -38,7 +37,6 @@ const ITEM_STATUS_LABELS: Record<SettlementItemStatus, string> = {
 // 상태별 아이콘
 const STATUS_ICONS: Record<SettlementStatus, React.ReactNode> = {
     PENDING: <Clock size={24} />,
-    IN_PROGRESS: <Play size={24} />,
     HOLD: <Pause size={24} />,
     COMPLETED: <CheckCircle size={24} />,
     FAILED: <AlertCircle size={24} />,
@@ -47,7 +45,6 @@ const STATUS_ICONS: Record<SettlementStatus, React.ReactNode> = {
 // 상태별 배경색 클래스
 const STATUS_BG_CLASSES: Record<SettlementStatus, string> = {
     PENDING: 'bg-amber-500',
-    IN_PROGRESS: 'bg-cyan-500',
     HOLD: 'bg-purple-500',
     COMPLETED: 'bg-green-500',
     FAILED: 'bg-red-500',
@@ -55,6 +52,7 @@ const STATUS_BG_CLASSES: Record<SettlementStatus, string> = {
 
 // 항목 상태별 스타일 클래스
 const ITEM_STATUS_CLASSES: Record<SettlementItemStatus, string> = {
+    COLLECTED: 'bg-blue-100 text-blue-800',
     INCLUDED: 'bg-green-100 text-green-800',
     CANCELED: 'bg-gray-200 text-gray-700',
     REFUNDED: 'bg-yellow-100 text-yellow-800',
@@ -66,6 +64,7 @@ type SortOption = 'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc';
 export const SettlementDetail = () => {
     const { settlementId } = useParams<{ settlementId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [settlement, setSettlement] = useState<Settlement | null>(null);
     const [items, setItems] = useState<SettlementItem[]>([]);
@@ -119,9 +118,14 @@ export const SettlementDetail = () => {
                 setLoading(true);
                 setError(null);
 
-                // 정산 목록에서 해당 정산 찾기
-                const settlementsData = await settlementService.getSettlements();
-                const found = settlementsData.content.find(s => s.settlementId === Number(settlementId));
+                // 1. 네비게이션 state에서 정산 데이터 가져오기 (SettlementList에서 전달)
+                let found: Settlement | undefined = (location.state as { settlement?: Settlement })?.settlement;
+
+                // 2. state가 없으면 (직접 URL 접근 등) 목록에서 검색
+                if (!found) {
+                    const settlementsData = await settlementService.getSettlements(undefined, undefined, 0, 100);
+                    found = settlementsData.content.find(s => s.settlementId === Number(settlementId));
+                }
 
                 if (!found) {
                     setError('정산 내역을 찾을 수 없습니다.');
@@ -271,6 +275,25 @@ export const SettlementDetail = () => {
                 </div>
             </div>
 
+            {/* 정산 실패 안내 */}
+            {settlement.status === 'FAILED' && (
+                <div className="flex items-start gap-3 p-5 bg-red-50 rounded-md mb-4 border border-red-200">
+                    <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-red-800 mb-1">정산 실패 안내</h3>
+                        <p className="text-sm text-red-700 leading-relaxed">
+                            해당 정산 건의 지급 처리 중 문제가 발생하여 정산이 실패되었습니다.
+                            등록된 계좌 정보를 확인해주시고, 문제가 지속될 경우 고객센터로 문의해주세요.
+                        </p>
+                        <div className="mt-3 flex gap-2">
+                            <span className="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                                계좌 정보 확인 필요
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* 정산 요약 */}
             <div className="mb-4">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3">정산 요약</h3>
@@ -350,7 +373,7 @@ export const SettlementDetail = () => {
 
                 {/* 상태 필터 */}
                 <div className="flex gap-2 flex-wrap max-md:overflow-x-auto max-md:flex-nowrap max-md:pb-1">
-                    {(['ALL', 'INCLUDED', 'CANCELED', 'REFUNDED', 'NEGATIVE'] as const).map((status) => (
+                    {(['ALL', 'COLLECTED', 'INCLUDED', 'CANCELED', 'REFUNDED', 'NEGATIVE'] as const).map((status) => (
                         <button
                             key={status}
                             className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-full text-xs font-medium cursor-pointer transition-all duration-150 flex-shrink-0 ${
